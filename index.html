@@ -175,14 +175,12 @@
                                     <input 
                                         type="text" required autoFocus
                                         className="w-full bg-black border border-zinc-700 rounded-lg py-3 pl-10 pr-3 text-white focus:border-fire-500 outline-none transition-colors"
-                                        placeholder="Ej: Juan Pérez..."
+                                        placeholder="Tu nombre aquí..."
                                         value={name} onChange={e => setName(e.target.value)}
                                     />
                                 </div>
                             </div>
-                            <button type="submit" className="w-full bg-gradient-fire text-white font-bold py-3 rounded-lg shadow-lg hover:opacity-90 transition-opacity mt-4">
-                                Ingresar
-                            </button>
+                            <button type="submit" className="w-full bg-gradient-fire text-white font-bold py-3 rounded-lg shadow-lg hover:opacity-90 transition-opacity mt-4">INGRESAR</button>
                         </form>
                     </div>
                 </div>
@@ -255,12 +253,25 @@
 
         // --- VISTA DE ESTADÍSTICAS ---
         const StatsView = ({ lists, onOpenList, onDeleteList, currentUser }) => {
+            // State for total computers target
+            const [totalTarget, setTotalTarget] = useState(() => {
+                return localStorage.getItem('checkmate_target_computers') || 270;
+            });
+
+            // Update local storage when target changes
+            const handleTargetChange = (e) => {
+                const val = e.target.value;
+                setTotalTarget(val);
+                localStorage.setItem('checkmate_target_computers', val);
+            };
+
             const completedLists = lists.filter(l => l.status === 'completed');
             
-            const totalItems = lists.reduce((acc, l) => acc + l.items.length, 0);
-            const doneItems = lists.reduce((acc, l) => acc + l.items.filter(i => i.done).length, 0);
-            const globalPercent = totalItems > 0 ? Math.round((doneItems / totalItems) * 100) : 0;
+            // Stats calculations
+            const computersDone = completedLists.length;
+            const coveragePercent = totalTarget > 0 ? Math.min(100, Math.round((computersDone / totalTarget) * 100)) : 0;
             
+            // Existing stats
             const techStats = {};
             lists.forEach(l => {
                 const tech = l.createdBy || 'Anon';
@@ -270,23 +281,40 @@
                 techStats[tech].done += l.items.filter(i => i.done).length;
             });
 
+            // Color for coverage pie chart
+            const coverageColor = coveragePercent < 50 ? '#ef4444' : coveragePercent < 80 ? '#f97316' : '#22c55e';
+
             return (
                 <div className="p-4 pb-24 space-y-6 animate-fade-in stats-view">
                     <h2 className="text-2xl font-bold text-white flex items-center gap-2"><Icons.Chart /> Estadísticas Globales</h2>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* KPI Cobertura del Parque */}
                         <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-2xl flex items-center justify-between shadow-lg">
                             <div>
-                                <p className="text-zinc-500 text-xs font-bold uppercase">Cumplimiento Total</p>
-                                <h3 className="text-4xl font-bold text-white mt-1">{globalPercent}%</h3>
-                                <div className="w-24 h-1.5 bg-zinc-800 rounded-full mt-2 overflow-hidden">
-                                    <div className="bg-fire-500 h-full" style={{width: `${globalPercent}%`}}></div>
+                                <p className="text-zinc-500 text-xs font-bold uppercase mb-1">Cobertura del Parque</p>
+                                <h3 className="text-4xl font-bold text-white mt-1">{coveragePercent}%</h3>
+                                <div className="mt-2 flex items-center gap-2 text-xs text-zinc-400">
+                                    <span className="text-white font-bold">{computersDone}</span> de 
+                                    <input 
+                                        type="number" 
+                                        className="bg-zinc-800 border border-zinc-700 rounded w-12 text-center text-white px-1 py-0.5 mx-1 focus:border-fire-500 outline-none"
+                                        value={totalTarget}
+                                        onChange={handleTargetChange}
+                                    />
+                                    equipos
                                 </div>
                             </div>
-                            <div className="text-right">
-                                <p className="text-2xl font-bold text-zinc-300">{lists.length}</p>
-                                <p className="text-xs text-zinc-500">Listas Totales</p>
+                            <div className="pie-chart" style={{"--percent": `${coveragePercent}%`, "--color": coverageColor}}>
+                                <div className="pie-content text-xl font-bold">{coveragePercent}%</div>
                             </div>
+                        </div>
+
+                         {/* Total Listas Completadas */}
+                        <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl flex flex-col justify-center shadow-lg">
+                            <p className="text-zinc-500 text-xs font-bold uppercase mb-2">Equipos Verificados</p>
+                            <h3 className="text-5xl font-bold text-white">{computersDone}</h3>
+                            <p className="text-emerald-500 text-xs mt-2 font-medium">Mantenimiento Completado</p>
                         </div>
                     </div>
 
@@ -303,7 +331,7 @@
                                         </div>
                                         <div>
                                             <p className="font-medium text-white">{name}</p>
-                                            <p className="text-xs text-zinc-500">{stats.lists} listas asignadas</p>
+                                            <p className="text-xs text-zinc-500">{stats.lists} equipos asignados</p>
                                         </div>
                                     </div>
                                     <div className="text-right">
@@ -315,17 +343,17 @@
                     </div>
 
                     <div className="space-y-3">
-                        <h3 className="font-bold text-sm text-zinc-500 uppercase pl-1">Historial de Listas (Toque para Editar)</h3>
+                        <h3 className="font-bold text-sm text-zinc-500 uppercase pl-1">Historial de Equipos Completados (Toque para Editar)</h3>
                         
-                        {completedLists.length === 0 && <p className="text-zinc-600 text-sm italic">No hay listas archivadas aún.</p>}
+                        {completedLists.length === 0 && <p className="text-zinc-600 text-sm italic">No hay equipos verificados aún.</p>}
                         {completedLists.map(l => {
                              const p = l.items.length > 0 ? Math.round((l.items.filter(i=>i.done).length / l.items.length) * 100) : 0;
                              return (
                                  <div key={l.id} onClick={() => onOpenList(l.id)} className="bg-zinc-900 border border-zinc-800 p-3 rounded-xl cursor-pointer hover:border-fire-500/50 transition-colors relative group">
                                      <div className="flex justify-between text-sm mb-1">
                                          <div className="truncate w-3/4">
-                                            <span className="text-zinc-300 block">{l.title}</span>
-                                            <span className="text-xs text-zinc-500">{l.equipmentId || 'Sin ID'}</span>
+                                            <span className="text-zinc-300 block font-bold">{l.title}</span>
+                                            <span className="text-xs text-zinc-500">{l.owner}</span>
                                          </div>
                                          <span className="text-white font-mono">{p}%</span>
                                      </div>
@@ -333,7 +361,7 @@
                                          <div className="bg-gradient-fire h-full transition-all duration-500" style={{width: `${p}%`}}></div>
                                      </div>
                                      <div className="flex justify-between mt-1 text-[10px] text-zinc-500">
-                                         <span>{l.owner}</span>
+                                         <span>{l.floor}</span>
                                          <span>Por: {l.createdBy}</span>
                                      </div>
                                      
@@ -354,7 +382,7 @@
 
         // --- MODAL PARA NUEVA LISTA ---
         const NewListModal = ({ isOpen, onClose, onCreate, currentUser }) => {
-            const [title, setTitle] = useState('');
+            const [title, setTitle] = useState(''); // Ahora es "Nombre de PC / Equipo"
             const [owner, setOwner] = useState(''); 
             const [floor, setFloor] = useState('');
             const [useTemplate, setUseTemplate] = useState(true);
@@ -373,14 +401,14 @@
             return (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 new-list-modal">
                     <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl w-full max-w-sm shadow-2xl">
-                        <h3 className="text-xl font-bold text-white mb-4">Nueva Lista de Verificación</h3>
+                        <h3 className="text-xl font-bold text-white mb-4">Nueva Inspección</h3>
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div>
-                                <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">Título (Ej: Soporte PC-01)</label>
-                                <input autoFocus required className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-fire-500 outline-none transition-colors" value={title} onChange={e => setTitle(e.target.value)} />
+                                <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">Nombre de PC / Equipo</label>
+                                <input autoFocus required className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-fire-500 outline-none transition-colors" placeholder="Ej: PC-RECEPCION-01" value={title} onChange={e => setTitle(e.target.value)} />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">Usuario</label>
+                                <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">Usuario (Cliente)</label>
                                 <input required className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-fire-500 outline-none transition-colors" value={owner} onChange={e => setOwner(e.target.value)} />
                             </div>
                             <div>
@@ -391,9 +419,9 @@
                                 <input type="checkbox" id="tpl" className="fire-checkbox" checked={useTemplate} onChange={e => setUseTemplate(e.target.checked)} />
                                 <label htmlFor="tpl" className="text-sm text-zinc-400">Usar plantilla de Soporte</label>
                             </div>
-                            <div className="flex gap-3 mt-6">
-                                <button type="button" onClick={onClose} className="flex-1 bg-zinc-800 text-white py-2 rounded-lg hover:bg-zinc-700 transition-colors">Cancelar</button>
-                                <button type="submit" className="flex-1 bg-gradient-fire text-white py-2 rounded-lg font-bold transition-transform active:scale-95">Crear</button>
+                            <div className="flex gap-3 mt-4">
+                                <button type="button" onClick={onClose} className="flex-1 bg-zinc-800 py-3 rounded-xl transition-colors">Cancelar</button>
+                                <button type="submit" className="flex-1 bg-gradient-fire text-white font-bold py-3 rounded-xl transition-transform active:scale-95">Crear</button>
                             </div>
                         </form>
                     </div>
@@ -454,19 +482,22 @@
                 "Antivirus", "WAVE", "Conectividad Red / IP", "Software operativos", "Funcionamiento del Disco"
             ];
 
-            const handleCreateList = ({ title, owner, floor, useTemplate }) => {
+            const handleCreateList = (e) => {
+                e.preventDefault();
+                if (!newTitle || !newOwner) return;
+
                 const initialItems = useTemplate 
                     ? TEMPLATE_ITEMS.map(text => ({ id: generateId(), text, done: false }))
                     : [];
 
                 const newList = {
                     id: generateId(),
-                    title,
-                    owner,
-                    floor,
+                    title: newTitle,
+                    owner: newOwner,
+                    floor: newFloor,
                     createdBy: user.name,
-                    status: 'active', // Estado inicial
-                    equipmentId: '',
+                    status: 'active', 
+                    equipmentId: '', // Puede ser usado como backup
                     observations: '',
                     items: initialItems
                 };
@@ -532,27 +563,7 @@
                 <div className="flex h-full bg-black text-zinc-200 overflow-hidden font-sans selection:bg-fire-500 selection:text-white">
                     {/* Modal Crear Lista */}
                     {isCreating && (
-                        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 animate-fade-in">
-                            <div className="bg-zinc-900 border border-zinc-800 w-full max-w-sm p-6 rounded-2xl shadow-2xl">
-                                <h3 className="text-xl font-bold text-white mb-4">Nueva Inspección</h3>
-                                <form onSubmit={(e) => {
-                                    e.preventDefault();
-                                    if(newTitle && newOwner) handleCreateList({ title: newTitle, owner: newOwner, floor: newFloor, useTemplate });
-                                }} className="space-y-4">
-                                    <input autoFocus required className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-fire-500 outline-none transition-colors" placeholder="Título (Ej: Mantenimiento PC-01)" value={newTitle} onChange={e => setNewTitle(e.target.value)} />
-                                    <input required className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-fire-500 outline-none transition-colors" placeholder="Usuario" value={newOwner} onChange={e => setNewOwner(e.target.value)} />
-                                    <input className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-fire-500 outline-none transition-colors" placeholder="Ubicación (Opcional)" value={newFloor} onChange={e => setNewFloor(e.target.value)} />
-                                    <div className="flex items-center gap-2 pt-2">
-                                        <input type="checkbox" id="tpl" className="fire-checkbox" checked={useTemplate} onChange={e => setUseTemplate(e.target.checked)} />
-                                        <label htmlFor="tpl" className="text-sm text-zinc-400">Usar plantilla de Soporte</label>
-                                    </div>
-                                    <div className="flex gap-3 mt-4">
-                                        <button type="button" onClick={() => setIsCreating(false)} className="flex-1 bg-zinc-800 py-3 rounded-xl transition-colors">Cancelar</button>
-                                        <button type="submit" className="flex-1 bg-gradient-fire text-white font-bold py-3 rounded-xl transition-transform active:scale-95">Crear</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
+                        <NewListModal isOpen={true} onClose={() => setIsCreating(false)} onCreate={handleCreateList} currentUser={user} />
                     )}
 
                     {/* Sidebar Desktop / Menú Móvil */}
