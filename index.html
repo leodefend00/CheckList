@@ -172,7 +172,8 @@
         // --- MODAL PARA NUEVA LISTA (ASIGNACIÓN) ---
         const NewListModal = ({ isOpen, onClose, onCreate, currentUser }) => {
             const [title, setTitle] = useState('');
-            const [owner, setOwner] = useState(currentUser.name);
+            // Ahora el owner se inicializa vacío porque se refiere al "cliente"
+            const [owner, setOwner] = useState(''); 
             const [floor, setFloor] = useState('');
 
             if (!isOpen) return null;
@@ -182,7 +183,8 @@
                 if (title && owner) {
                     onCreate({ title, owner, floor });
                     setTitle(''); 
-                    // No reseteamos owner para facilitar crear varias listas seguidas
+                    setOwner('');
+                    setFloor('');
                     onClose();
                 }
             };
@@ -197,8 +199,8 @@
                                 <input autoFocus required className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-fire-500 outline-none" placeholder="Ej: Revisión Diaria" value={title} onChange={e => setTitle(e.target.value)} />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">Asignar a (Nombre)</label>
-                                <input required className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-fire-500 outline-none" placeholder="Nombre del responsable" value={owner} onChange={e => setOwner(e.target.value)} />
+                                <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">Realizado a (Nombre del Cliente)</label>
+                                <input required className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-fire-500 outline-none" placeholder="Nombre de la persona atendida" value={owner} onChange={e => setOwner(e.target.value)} />
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">Ubicación / Piso (Opcional)</label>
@@ -260,7 +262,7 @@
                                         setIsCloudActive(true);
                                     } else if (!doc.exists) {
                                         const initialData = [{ 
-                                            id: '1', title: '📋 Lista Global (Ejemplo)', owner: 'Sistema', floor: 'General', isDefault: true,
+                                            id: '1', title: '📋 Lista Global (Ejemplo)', owner: 'Sistema', floor: 'General', isDefault: true, createdBy: 'Sistema',
                                             items: [{id: 'i1', text: 'Esta lista la ven todos', done: false}] 
                                         }];
                                         db.collection('checkmate_lists').doc(CHECKLIST_ROOM_ID).set({ data: initialData });
@@ -286,8 +288,9 @@
                 saveData([...lists, { 
                     id: generateId(), 
                     title, 
-                    owner, 
-                    floor, 
+                    owner, // Cliente
+                    floor, // Ubicación
+                    createdBy: user.name, // Quien la creó (el técnico/usuario logueado)
                     items: [] 
                 }]);
                 setSidebarOpen(false);
@@ -307,7 +310,7 @@
             // FILTRADO DE LISTAS
             const filteredLists = lists.filter(l => {
                 if (user.isAdmin) return true; // Leonardo ve TODO
-                return l.owner === user.name || l.isDefault; // Otros ven lo suyo + default
+                return l.createdBy === user.name || l.isDefault; // Ves las que TÚ creaste + default
             });
 
             return (
@@ -328,7 +331,7 @@
                             <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3">
                                 <div className="flex justify-between items-start">
                                     <div>
-                                        <p className="text-xs text-zinc-500 uppercase font-bold mb-1">{user.isAdmin ? '👑 ADMIN' : 'Usuario'}</p>
+                                        <p className="text-xs text-zinc-500 uppercase font-bold mb-1">{user.isAdmin ? '👑 ADMIN' : 'Técnico / Usuario'}</p>
                                         <p className="text-white font-medium truncate">{user.name}</p>
                                     </div>
                                 </div>
@@ -338,7 +341,7 @@
                         <div className="p-4 flex flex-col h-[calc(100%-160px)]">
                             <div className="flex-1 overflow-y-auto space-y-2">
                                 <div className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-3 pl-2">
-                                    {user.isAdmin ? 'Todas las Listas' : 'Mis Listas'}
+                                    {user.isAdmin ? 'Todas las Listas' : 'Mis Listas Creadas'}
                                 </div>
                                 {filteredLists.map(l => (
                                     <div key={l.id} className="flex flex-col px-3 py-3 rounded-xl bg-zinc-900/50 border border-zinc-900 hover:border-fire-600/50 hover:bg-zinc-900 transition-all cursor-pointer group">
@@ -381,8 +384,8 @@
                                     const total = list.items.length;
                                     const checked = list.items.filter(i => i.done).length;
                                     const percent = total === 0 ? 0 : Math.round((checked / total) * 100);
-                                    // Solo permitir editar/borrar si eres dueño o admin
-                                    const canEdit = user.isAdmin || list.owner === user.name;
+                                    // Solo permitir editar/borrar si eres el creador (createdBy) o admin
+                                    const canEdit = user.isAdmin || list.createdBy === user.name;
 
                                     return (
                                         <div key={list.id} className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden flex flex-col card shadow-xl shadow-black/50 group hover:border-zinc-700 transition-colors">
