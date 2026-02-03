@@ -24,9 +24,7 @@
                 extend: {
                     colors: {
                         zinc: { 850: '#1f1f22', 900: '#18181b', 950: '#0c0c0e' }, 
-                        fire: { 
-                            400: '#fb923c', 500: '#f97316', 600: '#ea580c', 700: '#c2410c', 800: '#9a3412', 
-                        }
+                        fire: { 400: '#fb923c', 500: '#f97316', 600: '#ea580c', 700: '#c2410c', 800: '#9a3412' }
                     },
                     screens: { 'print': {'raw': 'print'} }
                 }
@@ -36,31 +34,30 @@
     <style>
         body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
-            background-color: #000; 
-            color: #fff;
-            -webkit-tap-highlight-color: transparent;
+            background-color: #000; color: #fff; -webkit-tap-highlight-color: transparent;
+            overscroll-behavior-y: none;
         }
         
-        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: #0c0c0e; }
         ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #f97316; }
 
         .fire-checkbox {
-            appearance: none; width: 1.3em; height: 1.3em;
-            border: 2px solid #52525b; border-radius: 0.25em;
-            display: grid; place-content: center; cursor: pointer; transition: all 0.2s ease;
+            appearance: none; width: 1.5em; height: 1.5em;
+            border: 2px solid #52525b; border-radius: 0.35em;
+            display: grid; place-content: center; cursor: pointer; transition: all 0.1s ease;
         }
         .fire-checkbox:checked { border-color: #f97316; background-color: #f97316; }
+        .fire-checkbox:disabled { opacity: 0.5; border-color: #333; background-color: #111; }
         .fire-checkbox::before {
-            content: "✓"; color: white; font-size: 0.9em; font-weight: bold;
-            transform: scale(0); transition: transform 0.2s;
+            content: "✓"; color: white; font-size: 1em; font-weight: bold;
+            transform: scale(0); transition: transform 0.1s;
         }
         .fire-checkbox:checked::before { transform: scale(1); }
 
         .bg-gradient-fire { background: linear-gradient(135deg, #f97316 0%, #dc2626 100%); }
 
-        /* Gráfico Circular Simple CSS */
         .pie-chart {
             width: 140px; height: 140px; border-radius: 50%;
             background: conic-gradient(var(--color) var(--percent), #333 0);
@@ -74,52 +71,34 @@
         }
         .pie-content { position: absolute; z-index: 10; text-align: center; }
 
-        /* Login Animation */
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .animate-slide-up { animation: slideUp 0.3s ease-out forwards; }
 
         @media print {
             @page { size: portrait; margin: 1cm; }
             body { background-color: white !important; color: black !important; font-size: 10pt; }
-            .no-print, aside, button, .add-form, .fab-btn, .mobile-header, .login-screen, .new-list-modal, .stats-view { display: none !important; }
-            main { margin: 0 !important; width: 100% !important; padding: 0 !important; }
-            .card { 
-                border: 1px solid #000 !important; 
-                break-inside: avoid; 
-                margin-bottom: 20px; 
-                box-shadow: none !important; 
-                background: white !important; 
-            }
+            .no-print, aside, button, .add-form, .fab-btn, .mobile-header, .login-screen, .new-list-modal, .focus-mode { display: none !important; }
+            main { margin: 0 !important; width: 100% !important; padding: 0 !important; height: auto !important; overflow: visible !important; }
+            .card { border: 1px solid #000 !important; break-inside: avoid; margin-bottom: 20px; box-shadow: none !important; background: white !important; }
             .card-header { border-bottom: 1px solid #000 !important; background: #eee !important; color: black !important; }
             .checkbox-label { color: black !important; }
             .fire-checkbox { border-color: #000 !important; }
             .fire-checkbox:checked { background-color: #000 !important; }
-            .progress-bg { background-color: #ddd !important; }
             .progress-fill { background-color: #000 !important; }
-            .user-tag { border: 1px solid #000 !important; color: #000 !important; background: #fff !important; }
-            
-            /* Inputs en impresión */
-            input, textarea {
-                background: transparent !important;
-                border: none !important;
-                color: black !important;
-                resize: none;
-            }
-            .obs-section {
-                border-top: 1px solid #000 !important;
-                margin-top: 10px;
-                padding-top: 5px;
-            }
+            .user-tag { border: 1px solid #000 !important; color: #000 !important; }
+            .stats-view { display: block !important; } 
         }
     </style>
 </head>
-<body class="h-screen overflow-hidden">
-    <div id="root" class="h-full"></div>
+<body class="h-screen w-screen overflow-hidden bg-black text-white">
+    <div id="root" class="h-full w-full"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+        const { useState, useEffect, useRef, useMemo } = React;
 
-        const CHECKLIST_ROOM_ID = "checkmate-global-v6"; 
+        const CHECKLIST_ROOM_ID = "checkmate-global-v9-workflow"; 
 
         const FIREBASE_CONFIG = {
             apiKey: "AIzaSyAUiRqoUjkVQdfpN2IVGUAHjd8SIWi8J6Q",
@@ -156,7 +135,9 @@
             Logout: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>,
             Desktop: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>,
             Chart: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path strokeLinecap="round" strokeLinejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>,
-            List: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+            List: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>,
+            Close: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>,
+            Back: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
         };
 
         const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -169,7 +150,8 @@
                 e.preventDefault();
                 if (name) {
                     const lowerName = name.trim().toLowerCase();
-                    const supervisors = ['carlos', 'jorge', 'carlos urbina', 'jorge garcia'];
+                    // Lista de SUPERVISORES autorizados (Leonardo agregado como Admin)
+                    const supervisors = ['carlos', 'jorge', 'carlos urbina', 'jorge garcia', 'leonardo', 'leo'];
                     const isAdmin = supervisors.includes(lowerName);
                     
                     onLogin({ name: name.trim(), isAdmin });
@@ -177,30 +159,30 @@
             };
 
             return (
-                <div className="fixed inset-0 bg-black flex items-center justify-center z-50 login-screen">
-                    <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-2xl w-full max-w-md shadow-2xl shadow-fire-900/20 animate-fade-in mx-4">
+                <div className="fixed inset-0 bg-black flex items-center justify-center z-50 p-4 login-screen">
+                    <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-2xl w-full max-w-sm shadow-2xl shadow-fire-900/20 animate-fade-in mx-4">
                         <div className="text-center mb-8">
                             <div className="w-16 h-16 bg-gradient-fire rounded-xl flex items-center justify-center text-white text-3xl mb-4 mx-auto shadow-lg shadow-fire-500/30">
                                 <Icons.Check />
                             </div>
                             <h2 className="text-2xl font-bold text-white">Check<span className="text-fire-500">Mate</span></h2>
-                            <p className="text-zinc-400 text-sm mt-2">Identifícate para continuar</p>
+                            <p className="text-zinc-400 text-sm mt-2">Plataforma Técnica</p>
                         </div>
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div>
-                                <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">Tu Nombre</label>
+                                <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">Nombre del Técnico</label>
                                 <div className="relative">
                                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500"><Icons.User /></div>
                                     <input 
                                         type="text" required autoFocus
                                         className="w-full bg-black border border-zinc-700 rounded-lg py-3 pl-10 pr-3 text-white focus:border-fire-500 outline-none transition-colors"
-                                        placeholder="Ej: Juan Pérez..."
+                                        placeholder="Ej: Leonardo, Carlos..."
                                         value={name} onChange={e => setName(e.target.value)}
                                     />
                                 </div>
                             </div>
                             <button type="submit" className="w-full bg-gradient-fire text-white font-bold py-3 rounded-lg shadow-lg hover:opacity-90 transition-opacity mt-4">
-                                Ingresar
+                                INGRESAR
                             </button>
                         </form>
                     </div>
@@ -208,188 +190,181 @@
             );
         };
 
-        // --- VISTA DE ESTADÍSTICAS (DASHBOARD) ---
-        const StatsView = ({ lists, currentUser }) => {
-            // Filtrar listas según el rol
-            const scopeLists = currentUser.isAdmin 
-                ? lists 
-                : lists.filter(l => l.createdBy === currentUser.name);
+        // --- PANTALLA DE EDICIÓN ENFOCADA (FOCUS MODE) ---
+        const FocusListEditor = ({ list, onSave, onFinish }) => {
+            const [localList, setLocalList] = useState(list);
+            const inputRef = useRef(null);
 
-            const totalLists = scopeLists.length;
-            const totalItems = scopeLists.reduce((acc, l) => acc + l.items.length, 0);
-            const doneItems = scopeLists.reduce((acc, l) => acc + l.items.filter(i => i.done).length, 0);
-            const globalPercent = totalItems > 0 ? Math.round((doneItems / totalItems) * 100) : 0;
-            const completeLists = scopeLists.filter(l => l.items.length > 0 && l.items.every(i => i.done)).length;
+            // Guardar cambios al salir o cambiar algo (Debounce simulado)
+            useEffect(() => {
+                const timeoutId = setTimeout(() => {
+                    onSave(localList);
+                }, 500);
+                return () => clearTimeout(timeoutId);
+            }, [localList, onSave]);
 
-            const pieColor = globalPercent < 50 ? '#ef4444' : globalPercent < 80 ? '#f97316' : '#22c55e';
-            const title = currentUser.isAdmin ? "Panel de Supervisión Global" : "Mis Estadísticas de Rendimiento";
+            const updateMachineName = (val) => {
+                setLocalList({ ...localList, equipmentId: val });
+            };
 
-            // Datos para Ranking (Solo Admin) o Resumen (Técnico)
-            const userStats = {};
-            scopeLists.forEach(l => {
-                const creator = l.createdBy || 'Desconocido';
-                if (!userStats[creator]) userStats[creator] = { total: 0, done: 0, count: 0 };
-                userStats[creator].count++;
-                userStats[creator].total += l.items.length;
-                userStats[creator].done += l.items.filter(i => i.done).length;
-            });
-            const sortedUsers = Object.entries(userStats).sort((a, b) => b[1].count - a[1].count);
+            const toggleItem = (itemId) => {
+                const newItems = localList.items.map(i => i.id === itemId ? { ...i, done: !i.done } : i);
+                setLocalList({ ...localList, items: newItems });
+            };
+
+            const deleteItem = (itemId) => {
+                const newItems = localList.items.filter(i => i.id !== itemId);
+                setLocalList({ ...localList, items: newItems });
+            };
+
+            const updateObs = (val) => {
+                setLocalList({ ...localList, observations: val });
+            };
+
+            const completed = localList.items.filter(i => i.done).length;
+            const total = localList.items.length;
+            const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
 
             return (
-                <div className="p-4 md:p-8 space-y-6 md:space-y-8 animate-fade-in pb-24 stats-view">
-                    <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-                        <Icons.Chart /> {title}
-                    </h2>
+                <div className="fixed inset-0 bg-zinc-950 z-50 flex flex-col focus-mode animate-slide-up">
+                    <div className="bg-zinc-900 border-b border-zinc-800 p-4 flex items-center justify-between shrink-0">
+                        <button onClick={() => onFinish(false)} className="text-zinc-400 hover:text-white"><Icons.Back /></button>
+                        <div className="text-center flex-1 mx-4 overflow-hidden">
+                            <h2 className="font-bold text-white truncate text-lg">{localList.title}</h2>
+                            <p className="text-xs text-zinc-400 truncate">{localList.owner}</p>
+                        </div>
+                        <div className="text-fire-500 font-bold font-mono">{percent}%</div>
+                    </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {/* Gráfico Circular */}
-                        <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl flex items-center justify-between shadow-lg">
-                            <div>
-                                <p className="text-zinc-500 text-xs font-bold uppercase mb-1">
-                                    {currentUser.isAdmin ? 'Cumplimiento Global' : 'Mi Efectividad'}
-                                </p>
-                                <h3 className="text-4xl font-bold text-white">{globalPercent}%</h3>
-                                <p className="text-zinc-400 text-xs mt-2">{doneItems} de {totalItems} ítems</p>
-                            </div>
-                            <div className="pie-chart" style={{"--percent": `${globalPercent}%`, "--color": pieColor}}>
-                                <div className="pie-content text-xl font-bold">{globalPercent}%</div>
+                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                        {/* CAMPO NOMBRE DE MÁQUINA (REEMPLAZA EL ADDER) */}
+                        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-3 flex items-center gap-3">
+                            <Icons.Desktop className="text-fire-500" />
+                            <div className="flex-1">
+                                <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Nombre de la PC / Equipo</label>
+                                <input 
+                                    type="text" 
+                                    className="w-full bg-transparent text-white focus:outline-none placeholder-zinc-600 font-mono"
+                                    placeholder="Ej: PC-RECEPCION-01"
+                                    value={localList.equipmentId || ''}
+                                    onChange={(e) => updateMachineName(e.target.value)}
+                                />
                             </div>
                         </div>
 
-                        {/* Listas Totales */}
-                        <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl flex flex-col justify-center shadow-lg">
-                            <p className="text-zinc-500 text-xs font-bold uppercase mb-2">
-                                {currentUser.isAdmin ? 'Listas Totales' : 'Mis Listas Creadas'}
-                            </p>
-                            <h3 className="text-5xl font-bold text-white">{totalLists}</h3>
-                            <p className="text-fire-500 text-xs mt-2 font-medium">En el sistema</p>
+                        <div className="space-y-2">
+                            {localList.items.map(item => (
+                                <div key={item.id} className="flex items-start gap-3 bg-zinc-900 p-3 rounded-lg border border-zinc-800">
+                                    <input type="checkbox" className="fire-checkbox flex-shrink-0 mt-0.5" checked={item.done} onChange={() => toggleItem(item.id)} />
+                                    <span className={`flex-1 text-sm ${item.done ? 'text-zinc-500 line-through' : 'text-zinc-200'}`}>{item.text}</span>
+                                    <button onClick={() => deleteItem(item.id)} className="text-zinc-600 hover:text-red-500 p-1"><Icons.Trash /></button>
+                                </div>
+                            ))}
                         </div>
 
-                         {/* Listas Completadas */}
-                        <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl flex flex-col justify-center shadow-lg">
-                            <p className="text-zinc-500 text-xs font-bold uppercase mb-2">
-                                {currentUser.isAdmin ? 'Listas Cerradas' : 'Completadas al 100%'}
-                            </p>
-                            <h3 className="text-5xl font-bold text-white">{completeLists}</h3>
-                            <p className="text-emerald-500 text-xs mt-2 font-medium">Finalizadas con éxito</p>
+                        <div className="mt-4">
+                            <label className="text-xs font-bold text-zinc-500 uppercase">Observaciones</label>
+                            <textarea className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-sm text-white mt-1 h-24 focus:border-fire-500 outline-none" placeholder="Notas adicionales..." value={localList.observations || ''} onChange={(e) => updateObs(e.target.value)} />
                         </div>
                     </div>
 
-                    <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl shadow-lg">
-                        <h3 className="text-white font-bold mb-4 text-sm uppercase tracking-wide">
-                            {currentUser.isAdmin ? 'Ranking de Técnicos' : 'Resumen de Mis Listas'}
-                        </h3>
-                        
-                        {currentUser.isAdmin ? (
-                            /* TABLA ADMIN: Ranking de todos */
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left text-sm text-zinc-400">
-                                    <thead className="text-xs text-zinc-500 uppercase bg-zinc-950/50 border-b border-zinc-800">
-                                        <tr>
-                                            <th className="px-4 py-3">Técnico</th>
-                                            <th className="px-4 py-3 text-center">Listas</th>
-                                            <th className="px-4 py-3 text-center">Avance</th>
-                                            <th className="px-4 py-3 text-right">Efectividad</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-zinc-800">
-                                        {sortedUsers.map(([name, stats], idx) => {
-                                            const efficiency = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
-                                            return (
-                                                <tr key={name} className="hover:bg-zinc-800/30 transition-colors">
-                                                    <td className="px-4 py-3 font-medium text-white flex items-center gap-2">
-                                                        {idx === 0 && <span title="Mejor Rendimiento">🏆</span>} {name}
-                                                    </td>
-                                                    <td className="px-4 py-3 text-center">{stats.count}</td>
-                                                    <td className="px-4 py-3 text-center text-emerald-500">{stats.done}/{stats.total}</td>
-                                                    <td className="px-4 py-3 text-right font-mono text-fire-500">{efficiency}%</td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
-                        ) : (
-                            /* TABLA TÉCNICO: Detalle de sus listas */
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left text-sm text-zinc-400">
-                                    <thead className="text-xs text-zinc-500 uppercase bg-zinc-950/50 border-b border-zinc-800">
-                                        <tr>
-                                            <th className="px-4 py-3">Lista</th>
-                                            <th className="px-4 py-3">Cliente / ID</th>
-                                            <th className="px-4 py-3 text-right">Progreso</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-zinc-800">
-                                        {scopeLists.map(list => {
-                                            const lTotal = list.items.length;
-                                            const lDone = list.items.filter(i => i.done).length;
-                                            const lPercent = lTotal > 0 ? Math.round((lDone / lTotal) * 100) : 0;
-                                            return (
-                                                <tr key={list.id} className="hover:bg-zinc-800/30 transition-colors">
-                                                    <td className="px-4 py-3 font-medium text-white">{list.title}</td>
-                                                    <td className="px-4 py-3">{list.owner} <span className="text-zinc-600">({list.equipmentId || '-'})</span></td>
-                                                    <td className="px-4 py-3 text-right">
-                                                        <span className={`px-2 py-1 rounded text-xs font-bold ${lPercent === 100 ? 'bg-emerald-500/20 text-emerald-500' : 'bg-zinc-800 text-zinc-400'}`}>
-                                                            {lPercent}%
-                                                        </span>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
+                    <div className="p-4 border-t border-zinc-800 bg-zinc-900 shrink-0">
+                        <button onClick={() => onFinish(true)} className="w-full bg-gradient-fire text-white font-bold py-3 rounded-xl shadow-lg shadow-fire-900/20 active:scale-95 transition-transform flex items-center justify-center gap-2">
+                            <Icons.Check /> Finalizar y Archivar
+                        </button>
                     </div>
                 </div>
             );
         };
 
-        // --- MODAL PARA NUEVA LISTA ---
-        const NewListModal = ({ isOpen, onClose, onCreate, currentUser }) => {
-            const [title, setTitle] = useState('');
-            const [owner, setOwner] = useState(''); 
-            const [floor, setFloor] = useState('');
-            const [useTemplate, setUseTemplate] = useState(true);
-
-            if (!isOpen) return null;
-
-            const handleSubmit = (e) => {
-                e.preventDefault();
-                if (title && owner) {
-                    onCreate({ title, owner, floor, useTemplate });
-                    setTitle(''); setOwner(''); setFloor(''); setUseTemplate(true);
-                    onClose();
-                }
-            };
+        // --- VISTA DE ESTADÍSTICAS ---
+        const StatsView = ({ lists, onOpenList }) => {
+            // Filtrar solo las listas COMPLETADAS/ARCHIVADAS para mostrar en el historial
+            const completedLists = lists.filter(l => l.status === 'completed');
+            
+            const totalItems = lists.reduce((acc, l) => acc + l.items.length, 0);
+            const doneItems = lists.reduce((acc, l) => acc + l.items.filter(i => i.done).length, 0);
+            const globalPercent = totalItems > 0 ? Math.round((doneItems / totalItems) * 100) : 0;
+            
+            const techStats = {};
+            lists.forEach(l => {
+                const tech = l.createdBy || 'Anon';
+                if (!techStats[tech]) techStats[tech] = { total: 0, done: 0, lists: 0 };
+                techStats[tech].lists++;
+                techStats[tech].total += l.items.length;
+                techStats[tech].done += l.items.filter(i => i.done).length;
+            });
 
             return (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 new-list-modal">
-                    <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl w-full max-w-sm shadow-2xl">
-                        <h3 className="text-xl font-bold text-white mb-4">Nueva Lista de Verificación</h3>
-                        <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="p-4 pb-24 space-y-6 animate-fade-in stats-view">
+                    <h2 className="text-2xl font-bold text-white flex items-center gap-2"><Icons.Chart /> Estadísticas Globales</h2>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-2xl flex items-center justify-between shadow-lg">
                             <div>
-                                <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">Título (Ej: Soporte PC-01)</label>
-                                <input autoFocus required className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-fire-500 outline-none" value={title} onChange={e => setTitle(e.target.value)} />
+                                <p className="text-zinc-500 text-xs font-bold uppercase">Cumplimiento Total</p>
+                                <h3 className="text-4xl font-bold text-white mt-1">{globalPercent}%</h3>
+                                <div className="w-24 h-1.5 bg-zinc-800 rounded-full mt-2 overflow-hidden">
+                                    <div className="bg-fire-500 h-full" style={{width: `${globalPercent}%`}}></div>
+                                </div>
                             </div>
-                            <div>
-                                <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">Realizado a (Nombre Cliente)</label>
-                                <input required className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-fire-500 outline-none" value={owner} onChange={e => setOwner(e.target.value)} />
+                            <div className="text-right">
+                                <p className="text-2xl font-bold text-zinc-300">{lists.length}</p>
+                                <p className="text-xs text-zinc-500">Listas Totales</p>
                             </div>
-                            <div>
-                                <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">Ubicación / Piso (Opcional)</label>
-                                <input className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-fire-500 outline-none" value={floor} onChange={e => setFloor(e.target.value)} />
-                            </div>
-                            <div className="flex items-center gap-2 pt-2">
-                                <input type="checkbox" id="useTemplate" className="fire-checkbox" checked={useTemplate} onChange={e => setUseTemplate(e.target.checked)} />
-                                <label htmlFor="useTemplate" className="text-sm text-zinc-300 cursor-pointer">Cargar items de Soporte Técnico</label>
-                            </div>
-                            <div className="flex gap-3 mt-6">
-                                <button type="button" onClick={onClose} className="flex-1 bg-zinc-800 text-white py-2 rounded-lg hover:bg-zinc-700">Cancelar</button>
-                                <button type="submit" className="flex-1 bg-gradient-fire text-white py-2 rounded-lg font-bold transition-transform active:scale-95">Crear</button>
-                            </div>
-                        </form>
+                        </div>
+                    </div>
+
+                    {/* Ranking Técnicos */}
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shadow-lg">
+                        <div className="p-4 border-b border-zinc-800 bg-zinc-900/50">
+                            <h3 className="font-bold text-sm text-zinc-300 uppercase">Rendimiento por Técnico</h3>
+                        </div>
+                        <div className="divide-y divide-zinc-800">
+                            {Object.entries(techStats).sort((a,b) => b[1].done - a[1].done).map(([name, stats], idx) => (
+                                <div key={name} className="p-4 flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-6 h-6 rounded flex items-center justify-center text-xs font-bold ${idx === 0 ? 'bg-yellow-500 text-black' : 'bg-zinc-800 text-zinc-400'}`}>
+                                            {idx + 1}
+                                        </div>
+                                        <div>
+                                            <p className="font-medium text-white">{name}</p>
+                                            <p className="text-xs text-zinc-500">{stats.lists} listas</p>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-fire-500 font-bold">{Math.round((stats.done/stats.total || 0)*100)}%</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Historial de Listas Completadas (Click para editar) */}
+                    <div className="space-y-3">
+                        <h3 className="font-bold text-sm text-zinc-500 uppercase pl-1">Historial de Listas (Toque para Editar)</h3>
+                        {completedLists.length === 0 && <p className="text-zinc-600 text-sm italic">No hay listas archivadas aún.</p>}
+                        {completedLists.map(l => {
+                             const p = l.items.length > 0 ? Math.round((l.items.filter(i=>i.done).length / l.items.length) * 100) : 0;
+                             return (
+                                 <div key={l.id} onClick={() => onOpenList(l.id)} className="bg-zinc-900 border border-zinc-800 p-3 rounded-xl cursor-pointer hover:border-fire-500/50 transition-colors">
+                                     <div className="flex justify-between text-sm mb-1">
+                                         <div className="truncate w-3/4">
+                                            <span className="text-zinc-300 block">{l.title}</span>
+                                            <span className="text-xs text-zinc-500">{l.equipmentId || 'Sin ID'}</span>
+                                         </div>
+                                         <span className="text-white font-mono">{p}%</span>
+                                     </div>
+                                     <div className="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                                         <div className="bg-gradient-fire h-full transition-all duration-500" style={{width: `${p}%`}}></div>
+                                     </div>
+                                     <div className="flex justify-between mt-1 text-[10px] text-zinc-500">
+                                         <span>{l.owner}</span>
+                                         <span>Por: {l.createdBy}</span>
+                                     </div>
+                                 </div>
+                             )
+                        })}
                     </div>
                 </div>
             );
@@ -398,62 +373,49 @@
         // --- APP PRINCIPAL ---
         function App() {
             const [user, setUser] = useState(() => {
-                const saved = localStorage.getItem('checkmate_user_v7');
+                const saved = localStorage.getItem('checkmate_user_final');
                 return saved ? JSON.parse(saved) : null;
             });
             const [lists, setLists] = useState([]);
             const [isCloudActive, setIsCloudActive] = useState(false);
-            const [sidebarOpen, setSidebarOpen] = useState(false);
-            const [isModalOpen, setIsModalOpen] = useState(false); 
             const [currentView, setCurrentView] = useState('lists'); 
+            const [sidebarOpen, setSidebarOpen] = useState(false);
+            const [isCreating, setIsCreating] = useState(false);
+            const [activeListId, setActiveListId] = useState(null);
             
-            const [editingListId, setEditingListId] = useState(null);
-            const [editingItemId, setEditingItemId] = useState(null);
-            const [editValue, setEditValue] = useState('');
-            const [newItemTexts, setNewItemTexts] = useState({});
+            const [newTitle, setNewTitle] = useState('');
+            const [newOwner, setNewOwner] = useState('');
+            const [newFloor, setNewFloor] = useState('');
+            const [useTemplate, setUseTemplate] = useState(true);
+            const saveTimeoutRef = useRef(null);
 
-            const handleLogin = (userData) => {
-                setUser(userData);
-                localStorage.setItem('checkmate_user_v7', JSON.stringify(userData));
-            };
-
-            const handleLogout = () => {
-                setUser(null);
-                localStorage.removeItem('checkmate_user_v7');
-            };
-
-            // Sync Logic
             useEffect(() => {
                 let unsub = () => {};
-                let authUnsub = () => {};
-                const initSync = async () => {
-                    const saved = localStorage.getItem('checkmate_data_v5');
-                    if (saved) setLists(JSON.parse(saved));
-                    if (isFirebaseAvailable && db && auth) {
-                        authUnsub = auth.onAuthStateChanged(async (u) => {
-                            if (!u) { try { await auth.signInAnonymously(); } catch(e) { return; } }
-                            unsub = db.collection('checkmate_lists').doc(CHECKLIST_ROOM_ID)
-                                .onSnapshot(doc => {
-                                    if (doc.exists && doc.data().data) {
-                                        setLists(doc.data().data);
-                                        setIsCloudActive(true);
-                                    } else if (!doc.exists) {
-                                        db.collection('checkmate_lists').doc(CHECKLIST_ROOM_ID).set({ data: [] });
-                                    }
-                                }, err => setIsCloudActive(false));
-                        });
-                    }
-                };
-                initSync();
-                return () => { unsub(); authUnsub(); };
+                const savedData = localStorage.getItem('checkmate_db_v9');
+                if (savedData) setLists(JSON.parse(savedData));
+
+                if (FIREBASE_CONFIG.apiKey && typeof firebase !== 'undefined') {
+                    firebase.auth().onAuthStateChanged(async (u) => {
+                        if (!u) try { await firebase.auth().signInAnonymously(); } catch(e){}
+                        unsub = firebase.firestore().collection('checkmate_lists').doc(CHECKLIST_ROOM_ID)
+                            .onSnapshot(doc => {
+                                if (doc.exists && doc.data().data) {
+                                    setLists(doc.data().data);
+                                    setIsCloudActive(true);
+                                }
+                            });
+                    });
+                }
+                return () => unsub();
             }, []);
 
             const saveData = (newLists) => {
                 setLists(newLists);
-                localStorage.setItem('checkmate_data_v5', JSON.stringify(newLists));
-                if (isCloudActive && db) {
-                    db.collection('checkmate_lists').doc(CHECKLIST_ROOM_ID).set({ data: newLists }).catch(console.error);
-                }
+                localStorage.setItem('checkmate_db_v9', JSON.stringify(newLists));
+                if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+                saveTimeoutRef.current = setTimeout(() => {
+                    if (db) db.collection('checkmate_lists').doc(CHECKLIST_ROOM_ID).set({ data: newLists }).catch(console.error);
+                }, 1000);
             };
 
             const TEMPLATE_ITEMS = [
@@ -461,178 +423,175 @@
                 "Antivirus", "WAVE", "Conectividad Red / IP", "Software operativos", "Funcionamiento del Disco"
             ];
 
-            const handleCreateList = ({ title, owner, floor, useTemplate }) => {
+            const handleCreateList = (e) => {
+                e.preventDefault();
+                if (!newTitle || !newOwner) return;
+
                 const initialItems = useTemplate 
                     ? TEMPLATE_ITEMS.map(text => ({ id: generateId(), text, done: false }))
                     : [];
-                saveData([...lists, { id: generateId(), title, owner, floor, createdBy: user.name, equipmentId: '', observations: '', items: initialItems }]);
-                setSidebarOpen(false);
+
+                const newList = {
+                    id: generateId(),
+                    title: newTitle,
+                    owner: newOwner,
+                    floor: newFloor,
+                    createdBy: user.name,
+                    status: 'active', // Estado inicial
+                    equipmentId: '',
+                    observations: '',
+                    items: initialItems
+                };
+
+                const updatedLists = [...lists, newList];
+                saveData(updatedLists);
+                setNewTitle(''); setNewOwner(''); setNewFloor(''); setIsCreating(false);
+                setActiveListId(newList.id);
             };
 
-            const deleteList = (id) => { if (confirm("¿Eliminar esta lista?")) saveData(lists.filter(l => l.id !== id)); };
-            const addItem = (listId, text) => { if (!text.trim()) return; const newLists = lists.map(l => l.id === listId ? { ...l, items: [...l.items, { id: generateId(), text, done: false }] } : l); saveData(newLists); setNewItemTexts({...newItemTexts, [listId]: ''}); };
-            const toggleItem = (listId, itemId) => { const newLists = lists.map(l => l.id === listId ? { ...l, items: l.items.map(i => i.id === itemId ? { ...i, done: !i.done } : i) } : l); saveData(newLists); };
-            const deleteItem = (listId, itemId) => { const newLists = lists.map(l => l.id === listId ? { ...l, items: l.items.filter(i => i.id !== itemId) } : l); saveData(newLists); };
-            const startEditList = (list) => { setEditingListId(list.id); setEditValue(list.title); };
-            const saveEditList = (id) => { if (editValue.trim()) saveData(lists.map(l => l.id === id ? { ...l, title: editValue } : l)); setEditingListId(null); };
-            const startEditItem = (item) => { setEditingItemId(item.id); setEditValue(item.text); };
-            const saveEditItem = (listId, itemId) => { if (editValue.trim()) saveData(lists.map(l => l.id === listId ? { ...l, items: l.items.map(i => i.id === itemId ? { ...i, text: editValue } : i) } : l)); setEditingItemId(null); };
-            const updateEquipmentId = (listId, val) => { const newLists = lists.map(l => l.id === listId ? { ...l, equipmentId: val } : l); saveData(newLists); };
-            const updateObservations = (listId, val) => { const newLists = lists.map(l => l.id === listId ? { ...l, observations: val } : l); saveData(newLists); };
+            const handleUpdateList = (updatedList) => {
+                const newLists = lists.map(l => l.id === updatedList.id ? updatedList : l);
+                saveData(newLists);
+            };
 
-            // Condicional de Renderizado
+            const handleDeleteList = (id) => {
+                if(confirm("¿Borrar esta lista permanentemente?")) {
+                    saveData(lists.filter(l => l.id !== id));
+                }
+            };
+
+            const handleLogin = (u) => {
+                setUser(u);
+                localStorage.setItem('checkmate_user_final', JSON.stringify(u));
+            };
+
+            const handleFinishList = (shouldArchive) => {
+                if (shouldArchive && activeListId) {
+                    // Cambiar estado a 'completed'
+                    const newLists = lists.map(l => l.id === activeListId ? { ...l, status: 'completed' } : l);
+                    saveData(newLists);
+                    setActiveListId(null);
+                    setCurrentView('stats'); // Redirigir a estadísticas
+                } else {
+                    setActiveListId(null); // Solo cerrar
+                }
+            };
+
+            const openListFromStats = (id) => {
+                setActiveListId(id);
+            };
+
             if (!user) return <LoginScreen onLogin={handleLogin} />;
 
-            const filteredLists = lists.filter(l => {
-                if (user.isAdmin) return true; // Supervisores ven TODO
-                return l.createdBy === user.name || l.isDefault; // Técnicos ven lo suyo
-            });
+            if (activeListId) {
+                const activeList = lists.find(l => l.id === activeListId);
+                if (activeList) {
+                    return (
+                        <FocusListEditor 
+                            list={activeList} 
+                            onSave={handleUpdateList} 
+                            onClose={() => handleFinishList(false)}
+                            onFinish={handleFinishList} 
+                        />
+                    );
+                } else {
+                    setActiveListId(null);
+                }
+            }
+
+            // Filtrar listas ACTIVAS para la vista principal
+            const activeLists = lists.filter(l => l.status !== 'completed' && (user.isAdmin || l.createdBy === user.name));
 
             return (
                 <div className="flex h-full bg-black text-zinc-200 overflow-hidden font-sans selection:bg-fire-500 selection:text-white">
-                    <NewListModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onCreate={handleCreateList} currentUser={user} />
+                    {/* Modal Crear Lista */}
+                    {isCreating && (
+                        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 animate-fade-in">
+                            <div className="bg-zinc-900 border border-zinc-800 w-full max-w-sm p-6 rounded-2xl shadow-2xl">
+                                <h3 className="text-xl font-bold text-white mb-4">Nueva Inspección</h3>
+                                <form onSubmit={handleCreateList} className="space-y-4">
+                                    <input autoFocus required className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-fire-500 outline-none" placeholder="Título (Ej: Mantenimiento PC-01)" value={newTitle} onChange={e => setNewTitle(e.target.value)} />
+                                    <input required className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-fire-500 outline-none" placeholder="Usuario" value={newOwner} onChange={e => setNewOwner(e.target.value)} />
+                                    <input className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-fire-500 outline-none" placeholder="Ubicación (Opcional)" value={newFloor} onChange={e => setNewFloor(e.target.value)} />
+                                    <div className="flex items-center gap-2 pt-2">
+                                        <input type="checkbox" id="tpl" className="fire-checkbox" checked={useTemplate} onChange={e => setUseTemplate(e.target.checked)} />
+                                        <label htmlFor="tpl" className="text-sm text-zinc-400">Usar plantilla de Soporte</label>
+                                    </div>
+                                    <div className="flex gap-3 mt-4">
+                                        <button type="button" onClick={() => setIsCreating(false)} className="flex-1 bg-zinc-800 py-3 rounded-xl">Cancelar</button>
+                                        <button type="submit" className="flex-1 bg-gradient-fire text-white font-bold py-3 rounded-xl">Crear</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
 
-                    {/* Sidebar */}
+                    {/* Sidebar Desktop / Menú Móvil */}
                     <aside className={`fixed inset-y-0 left-0 w-72 bg-zinc-950 border-r border-zinc-900 z-30 transition-transform duration-300 md:relative md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                         <div className="p-6 flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-lg bg-gradient-fire flex items-center justify-center text-white shadow-lg shadow-fire-500/20"><Icons.Check /></div>
-                                <h1 className="font-bold text-xl tracking-tight text-white">Check<span className="text-fire-500">Mate</span></h1>
-                            </div>
-                            <button onClick={() => setSidebarOpen(false)} className="md:hidden text-zinc-500"><Icons.Plus className="rotate-45" /></button>
+                            <h1 className="font-bold text-xl text-white">Check<span className="text-fire-500">Mate</span></h1>
+                            <button onClick={() => setSidebarOpen(false)} className="md:hidden text-zinc-500"><Icons.Plus className="rotate-45"/></button>
                         </div>
-                        
-                        <div className="px-6 py-2">
-                            <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3">
-                                <div className="flex justify-between items-start">
-                                    <div>
-                                        <p className="text-xs text-zinc-500 uppercase font-bold mb-1">{user.isAdmin ? '👮‍♂️ SUPERVISOR' : 'Técnico'}</p>
-                                        <p className="text-white font-medium truncate">{user.name}</p>
-                                    </div>
-                                </div>
-                            </div>
+                        <div className="px-6 pb-4">
+                            <p className="text-xs font-bold text-zinc-500 uppercase">Técnico</p>
+                            <p className="text-white truncate">{user.name}</p>
                         </div>
-
-                        <div className="p-4 flex flex-col h-[calc(100%-160px)]">
-                            <div className="space-y-1 mb-4">
-                                <p className="px-2 text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">Navegación</p>
-                                <button onClick={() => { setCurrentView('lists'); setSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${currentView === 'lists' ? 'bg-zinc-900 text-fire-500 border border-zinc-800' : 'text-zinc-400 hover:text-white hover:bg-zinc-900'}`}>
-                                    <Icons.List /> {user.isAdmin ? 'Todas las Listas' : 'Mis Listas'}
-                                </button>
-                                
-                                <button onClick={() => { setCurrentView('stats'); setSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${currentView === 'stats' ? 'bg-zinc-900 text-fire-500 border border-zinc-800' : 'text-zinc-400 hover:text-white hover:bg-zinc-900'}`}>
-                                    <Icons.Chart /> Estadísticas {user.isAdmin ? 'Globales' : 'Personales'}
-                                </button>
-                            </div>
-                            
-                            <button onClick={() => { setIsModalOpen(true); setSidebarOpen(false); }} className="mt-auto w-full bg-gradient-fire text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-fire-900/20 hover:shadow-fire-500/40 hover:scale-[1.02] transition-all active:scale-95 flex items-center justify-center gap-2">
-                                <Icons.Plus /> Nueva Lista
+                        <nav className="p-4 space-y-2">
+                            <button onClick={() => { setCurrentView('lists'); setSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${currentView === 'lists' ? 'bg-zinc-900 text-fire-500' : 'text-zinc-400 hover:text-white'}`}>
+                                <Icons.Menu /> Mis Listas
                             </button>
-                            <button onClick={handleLogout} className="mt-2 w-full text-zinc-500 hover:text-white py-2 text-xs flex items-center justify-center gap-2">
-                                <Icons.Logout /> Cerrar Sesión
+                            <button onClick={() => { setCurrentView('stats'); setSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${currentView === 'stats' ? 'bg-zinc-900 text-fire-500' : 'text-zinc-400 hover:text-white'}`}>
+                                <Icons.Chart /> Estadísticas
                             </button>
-                        </div>
+                            <button onClick={() => { setUser(null); localStorage.removeItem('checkmate_user_final'); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-500 hover:text-red-500 mt-8">
+                                <Icons.Trash /> Salir
+                            </button>
+                        </nav>
                     </aside>
-                    
-                    {sidebarOpen && <div className="fixed inset-0 bg-black/80 z-20 md:hidden backdrop-blur-sm" onClick={() => setSidebarOpen(false)}></div>}
 
-                    {/* Main Content */}
-                    <main className="flex-1 flex flex-col h-full relative bg-zinc-950">
-                        <header className="h-16 border-b border-zinc-900 bg-zinc-950/80 backdrop-blur-md flex items-center justify-between px-4 md:px-8 z-10 sticky top-0 no-print">
-                            <div className="flex items-center gap-3">
-                                <button onClick={() => setSidebarOpen(true)} className="md:hidden text-zinc-400 hover:text-white mobile-header"><Icons.Menu /></button>
-                                <div className={`flex items-center gap-2 text-xs px-2 py-1 rounded-full ${isCloudActive ? 'text-emerald-500 bg-emerald-500/10' : 'text-zinc-500 bg-zinc-800'}`}>
-                                    <Icons.Cloud /> {isCloudActive ? 'Online' : 'Local'}
-                                </div>
+                    <main className="flex-1 flex flex-col relative bg-zinc-950 h-full overflow-hidden">
+                        {/* Header */}
+                        <header className="h-16 border-b border-zinc-900 flex items-center justify-between px-4 shrink-0">
+                            <button onClick={() => setSidebarOpen(true)} className="md:hidden text-zinc-400"><Icons.Menu /></button>
+                            <div className="text-xs text-zinc-500 flex items-center gap-1">
+                                {isCloudActive ? <span className="w-2 h-2 bg-emerald-500 rounded-full"></span> : <span className="w-2 h-2 bg-orange-500 rounded-full"></span>}
+                                {isCloudActive ? 'Sync' : 'Local'}
                             </div>
-                            <button onClick={() => window.print()} className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-900 rounded-lg transition-colors" title="Imprimir"><Icons.Printer /></button>
                         </header>
 
+                        {/* Content */}
                         <div className="flex-1 overflow-y-auto p-4 md:p-8">
                             {currentView === 'stats' ? (
-                                <StatsView lists={user.isAdmin ? lists : filteredLists} currentUser={user} />
+                                <StatsView lists={lists} onOpenList={openListFromStats} />
                             ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20">
-                                    {filteredLists.map(list => {
+                                <div className="space-y-4 pb-24">
+                                    {activeLists.length === 0 && (
+                                        <div className="text-center py-10 text-zinc-500">
+                                            <p>No tienes listas pendientes.</p>
+                                            <p className="text-sm">Toca el botón + para empezar.</p>
+                                        </div>
+                                    )}
+                                    {activeLists.map(list => {
                                         const total = list.items.length;
-                                        const checked = list.items.filter(i => i.done).length;
-                                        const percent = total === 0 ? 0 : Math.round((checked / total) * 100);
-                                        const canEdit = user.isAdmin || list.createdBy === user.name;
-                                        const showOwner = user.isAdmin && list.createdBy !== user.name;
-
+                                        const done = list.items.filter(i => i.done).length;
+                                        const pct = total > 0 ? Math.round((done/total)*100) : 0;
+                                        
                                         return (
-                                            <div key={list.id} className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden flex flex-col card shadow-xl shadow-black/50 group hover:border-zinc-700 transition-colors">
-                                                <div className="p-4 bg-zinc-900 card-header relative">
-                                                    <div className="flex justify-between items-start mb-1">
-                                                        <div className="pr-6 w-full">
-                                                            {editingListId === list.id && canEdit ? (
-                                                                <input autoFocus className="bg-black text-white text-lg font-bold border-b border-fire-500 w-full outline-none" value={editValue} onChange={(e) => setEditValue(e.target.value)} onBlur={() => saveEditList(list.id)} onKeyDown={(e) => e.key === 'Enter' && saveEditList(list.id)} />
-                                                            ) : (
-                                                                <h3 className={`text-lg font-bold text-white truncate pr-2 ${canEdit ? 'cursor-pointer hover:text-fire-400' : ''}`} onClick={() => canEdit && startEditList(list)}>{list.title}</h3>
-                                                            )}
-                                                            <div className="flex flex-wrap gap-1 mt-1">
-                                                                <span className="text-[10px] bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded border border-zinc-700 user-tag flex items-center gap-1" title="Cliente"><Icons.User /> {list.owner}</span>
-                                                                {list.floor && <span className="text-[10px] bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded border border-zinc-700 user-tag flex items-center gap-1"><Icons.Building /> {list.floor}</span>}
-                                                            </div>
-                                                            {showOwner && (
-                                                                <div className="mt-1 flex items-center gap-1 text-[9px] text-fire-500 font-mono border border-fire-900/30 bg-fire-900/10 px-1.5 py-0.5 rounded w-fit">
-                                                                    Creado por: {list.createdBy}
-                                                                </div>
-                                                            )}
-                                                            <div className="mt-2 flex items-center gap-2">
-                                                                <Icons.Desktop />
-                                                                <input type="text" className="bg-transparent border-b border-zinc-700 text-xs text-white w-full focus:border-fire-500 outline-none placeholder-zinc-600" placeholder="ID Equipo" value={list.equipmentId || ''} onChange={(e) => updateEquipmentId(list.id, e.target.value)} disabled={!canEdit} />
-                                                            </div>
-                                                        </div>
-                                                        
-                                                        {canEdit && (
-                                                            <div className="flex gap-2 absolute right-3 top-4">
-                                                                <button onClick={() => startEditList(list)} className="text-zinc-600 hover:text-fire-500 no-print"><Icons.Edit /></button>
-                                                                <button onClick={() => deleteList(list.id)} className="text-zinc-600 hover:text-red-500 no-print"><Icons.Trash /></button>
-                                                            </div>
-                                                        )}
+                                            <div key={list.id} onClick={() => setActiveListId(list.id)} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 active:scale-[0.98] transition-transform cursor-pointer">
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <div className="overflow-hidden mr-2">
+                                                        <h3 className="font-bold text-white truncate">{list.title}</h3>
+                                                        <p className="text-xs text-zinc-400 truncate">{list.owner}</p>
                                                     </div>
-                                                    
-                                                    <div className="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden progress-bg mt-3">
-                                                        <div className="bg-gradient-fire h-full transition-all duration-500 progress-fill" style={{width: `${percent}%`}}></div>
-                                                    </div>
-                                                    <div className="text-[10px] text-zinc-500 mt-1 text-right font-mono">{percent}% Completado</div>
+                                                    <span className={`text-xs font-bold px-2 py-1 rounded ${pct === 100 ? 'bg-emerald-900/30 text-emerald-500' : 'bg-zinc-800 text-zinc-400'}`}>{pct}%</span>
                                                 </div>
-
-                                                <div className="flex-1 p-4 max-h-[350px] overflow-y-auto">
-                                                    <ul className="space-y-3">
-                                                        {list.items.map(item => (
-                                                            <li key={item.id} className="flex items-start gap-3 group/item">
-                                                                <input type="checkbox" className="fire-checkbox flex-shrink-0 mt-0.5" checked={item.done} onChange={() => toggleItem(list.id, item.id)} disabled={!canEdit} />
-                                                                {editingItemId === item.id && canEdit ? (
-                                                                    <input autoFocus className="bg-transparent border-b border-fire-500 text-sm text-white w-full outline-none" value={editValue} onChange={(e) => setEditValue(e.target.value)} onBlur={() => saveEditItem(list.id, item.id)} onKeyDown={(e) => e.key === 'Enter' && saveEditItem(list.id, item.id)} />
-                                                                ) : (
-                                                                    <span className={`text-sm flex-1 break-words transition-colors ${canEdit ? 'cursor-pointer hover:text-white' : ''} ${item.done ? 'text-zinc-500 line-through decoration-zinc-600' : 'text-zinc-300'}`} onClick={() => canEdit && startEditItem(item)}>{item.text}</span>
-                                                                )}
-                                                                {canEdit && (
-                                                                    <button onClick={() => deleteItem(list.id, item.id)} className="text-zinc-700 hover:text-red-500 opacity-0 group-hover/item:opacity-100 transition-opacity no-print"><Icons.Trash /></button>
-                                                                )}
-                                                            </li>
-                                                        ))}
-                                                    </ul>
+                                                <div className="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                                                    <div className="bg-gradient-fire h-full" style={{width: `${pct}%`}}></div>
                                                 </div>
-
-                                                <div className="px-4 pb-4 obs-section">
-                                                    <p className="text-[10px] text-zinc-500 uppercase font-bold mb-1">Observaciones</p>
-                                                    <textarea 
-                                                        className="w-full bg-zinc-900/50 border border-zinc-800 rounded p-2 text-xs text-zinc-300 focus:border-fire-500 outline-none resize-none h-20"
-                                                        placeholder="Escribe detalles técnicos aquí..."
-                                                        value={list.observations || ''}
-                                                        onChange={(e) => updateObservations(list.id, e.target.value)}
-                                                        disabled={!canEdit}
-                                                    ></textarea>
+                                                <div className="flex justify-between mt-3 text-xs text-zinc-500">
+                                                    <span>{list.items.length} ítems</span>
+                                                    <button onClick={(e) => { e.stopPropagation(); handleDeleteList(list.id); }} className="hover:text-red-500 p-1"><Icons.Trash /></button>
                                                 </div>
-
-                                                {canEdit && (
-                                                    <div className="p-3 bg-zinc-900 border-t border-zinc-800 add-form">
-                                                        <input type="text" className="w-full bg-black border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-fire-600 transition-colors" placeholder="+ Agregar ítem..." value={newItemTexts[list.id] || ''} onChange={(e) => setNewItemTexts({...newItemTexts, [list.id]: e.target.value})} onKeyPress={(e) => e.key === 'Enter' && addItem(list.id, newItemTexts[list.id])} />
-                                                    </div>
-                                                )}
                                             </div>
                                         );
                                     })}
@@ -640,7 +599,12 @@
                             )}
                         </div>
 
-                        <button onClick={() => { setIsModalOpen(true); }} className="md:hidden fixed bottom-6 right-6 w-14 h-14 bg-gradient-fire rounded-full shadow-xl shadow-fire-900/40 flex items-center justify-center text-white z-40 fab-btn active:scale-90 transition-transform"><Icons.Plus /></button>
+                        {/* FAB */}
+                        {currentView === 'lists' && (
+                            <button onClick={() => setIsCreating(true)} className="absolute bottom-6 right-6 w-14 h-14 bg-gradient-fire rounded-full shadow-xl shadow-fire-900/40 flex items-center justify-center text-white z-40 fab-btn active:scale-90 transition-transform">
+                                <Icons.Plus />
+                            </button>
+                        )}
                     </main>
                 </div>
             );
