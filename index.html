@@ -150,7 +150,6 @@
                 e.preventDefault();
                 if (name) {
                     const lowerName = name.trim().toLowerCase();
-                    // Lista de SUPERVISORES autorizados (Leonardo agregado como Admin)
                     const supervisors = ['carlos', 'jorge', 'carlos urbina', 'jorge garcia', 'leonardo', 'leo'];
                     const isAdmin = supervisors.includes(lowerName);
                     
@@ -176,13 +175,13 @@
                                     <input 
                                         type="text" required autoFocus
                                         className="w-full bg-black border border-zinc-700 rounded-lg py-3 pl-10 pr-3 text-white focus:border-fire-500 outline-none transition-colors"
-                                        placeholder="Ej: Leonardo, Carlos..."
+                                        placeholder="Ej: Juan Pérez..."
                                         value={name} onChange={e => setName(e.target.value)}
                                     />
                                 </div>
                             </div>
                             <button type="submit" className="w-full bg-gradient-fire text-white font-bold py-3 rounded-lg shadow-lg hover:opacity-90 transition-opacity mt-4">
-                                INGRESAR
+                                Ingresar
                             </button>
                         </form>
                     </div>
@@ -195,31 +194,15 @@
             const [localList, setLocalList] = useState(list);
             const inputRef = useRef(null);
 
-            // Guardar cambios al salir o cambiar algo (Debounce simulado)
             useEffect(() => {
-                const timeoutId = setTimeout(() => {
-                    onSave(localList);
-                }, 500);
+                const timeoutId = setTimeout(() => { onSave(localList); }, 500);
                 return () => clearTimeout(timeoutId);
             }, [localList, onSave]);
 
-            const updateMachineName = (val) => {
-                setLocalList({ ...localList, equipmentId: val });
-            };
-
-            const toggleItem = (itemId) => {
-                const newItems = localList.items.map(i => i.id === itemId ? { ...i, done: !i.done } : i);
-                setLocalList({ ...localList, items: newItems });
-            };
-
-            const deleteItem = (itemId) => {
-                const newItems = localList.items.filter(i => i.id !== itemId);
-                setLocalList({ ...localList, items: newItems });
-            };
-
-            const updateObs = (val) => {
-                setLocalList({ ...localList, observations: val });
-            };
+            const updateMachineName = (val) => setLocalList({ ...localList, equipmentId: val });
+            const toggleItem = (itemId) => setLocalList({ ...localList, items: localList.items.map(i => i.id === itemId ? { ...i, done: !i.done } : i) });
+            const deleteItem = (itemId) => setLocalList({ ...localList, items: localList.items.filter(i => i.id !== itemId) });
+            const updateObs = (val) => setLocalList({ ...localList, observations: val });
 
             const completed = localList.items.filter(i => i.done).length;
             const total = localList.items.length;
@@ -237,18 +220,11 @@
                     </div>
 
                     <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                        {/* CAMPO NOMBRE DE MÁQUINA (REEMPLAZA EL ADDER) */}
                         <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-3 flex items-center gap-3">
                             <Icons.Desktop className="text-fire-500" />
                             <div className="flex-1">
                                 <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Nombre de la PC / Equipo</label>
-                                <input 
-                                    type="text" 
-                                    className="w-full bg-transparent text-white focus:outline-none placeholder-zinc-600 font-mono"
-                                    placeholder="Ej: PC-RECEPCION-01"
-                                    value={localList.equipmentId || ''}
-                                    onChange={(e) => updateMachineName(e.target.value)}
-                                />
+                                <input type="text" className="w-full bg-transparent text-white focus:outline-none placeholder-zinc-600 font-mono" placeholder="Ej: PC-RECEPCION-01" value={localList.equipmentId || ''} onChange={(e) => updateMachineName(e.target.value)} />
                             </div>
                         </div>
 
@@ -278,8 +254,7 @@
         };
 
         // --- VISTA DE ESTADÍSTICAS ---
-        const StatsView = ({ lists, onOpenList }) => {
-            // Filtrar solo las listas COMPLETADAS/ARCHIVADAS para mostrar en el historial
+        const StatsView = ({ lists, onOpenList, onDeleteList, currentUser }) => {
             const completedLists = lists.filter(l => l.status === 'completed');
             
             const totalItems = lists.reduce((acc, l) => acc + l.items.length, 0);
@@ -315,7 +290,6 @@
                         </div>
                     </div>
 
-                    {/* Ranking Técnicos */}
                     <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shadow-lg">
                         <div className="p-4 border-b border-zinc-800 bg-zinc-900/50">
                             <h3 className="font-bold text-sm text-zinc-300 uppercase">Rendimiento por Técnico</h3>
@@ -329,7 +303,7 @@
                                         </div>
                                         <div>
                                             <p className="font-medium text-white">{name}</p>
-                                            <p className="text-xs text-zinc-500">{stats.lists} listas</p>
+                                            <p className="text-xs text-zinc-500">{stats.lists} listas asignadas</p>
                                         </div>
                                     </div>
                                     <div className="text-right">
@@ -340,14 +314,14 @@
                         </div>
                     </div>
 
-                    {/* Historial de Listas Completadas (Click para editar) */}
                     <div className="space-y-3">
                         <h3 className="font-bold text-sm text-zinc-500 uppercase pl-1">Historial de Listas (Toque para Editar)</h3>
+                        
                         {completedLists.length === 0 && <p className="text-zinc-600 text-sm italic">No hay listas archivadas aún.</p>}
                         {completedLists.map(l => {
                              const p = l.items.length > 0 ? Math.round((l.items.filter(i=>i.done).length / l.items.length) * 100) : 0;
                              return (
-                                 <div key={l.id} onClick={() => onOpenList(l.id)} className="bg-zinc-900 border border-zinc-800 p-3 rounded-xl cursor-pointer hover:border-fire-500/50 transition-colors">
+                                 <div key={l.id} onClick={() => onOpenList(l.id)} className="bg-zinc-900 border border-zinc-800 p-3 rounded-xl cursor-pointer hover:border-fire-500/50 transition-colors relative group">
                                      <div className="flex justify-between text-sm mb-1">
                                          <div className="truncate w-3/4">
                                             <span className="text-zinc-300 block">{l.title}</span>
@@ -362,9 +336,66 @@
                                          <span>{l.owner}</span>
                                          <span>Por: {l.createdBy}</span>
                                      </div>
+                                     
+                                     {/* Botón de borrado individual */}
+                                     <button 
+                                         onClick={(e) => { e.stopPropagation(); onDeleteList(l.id); }} 
+                                         className="absolute top-2 right-2 p-1.5 text-zinc-600 hover:text-red-500 bg-zinc-900/80 rounded-full md:opacity-0 md:group-hover:opacity-100 transition-opacity"
+                                     >
+                                         <Icons.Trash className="w-4 h-4"/>
+                                     </button>
                                  </div>
                              )
                         })}
+                    </div>
+                </div>
+            );
+        };
+
+        // --- MODAL PARA NUEVA LISTA ---
+        const NewListModal = ({ isOpen, onClose, onCreate, currentUser }) => {
+            const [title, setTitle] = useState('');
+            const [owner, setOwner] = useState(''); 
+            const [floor, setFloor] = useState('');
+            const [useTemplate, setUseTemplate] = useState(true);
+
+            if (!isOpen) return null;
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (title && owner) {
+                    onCreate({ title, owner, floor, useTemplate });
+                    setTitle(''); setOwner(''); setFloor(''); setUseTemplate(true);
+                    onClose();
+                }
+            };
+
+            return (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 new-list-modal">
+                    <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl w-full max-w-sm shadow-2xl">
+                        <h3 className="text-xl font-bold text-white mb-4">Nueva Lista de Verificación</h3>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">Título (Ej: Soporte PC-01)</label>
+                                <input autoFocus required className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-fire-500 outline-none transition-colors" value={title} onChange={e => setTitle(e.target.value)} />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">Usuario</label>
+                                <input required className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-fire-500 outline-none transition-colors" value={owner} onChange={e => setOwner(e.target.value)} />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">Ubicación / Piso (Opcional)</label>
+                                <input className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-fire-500 outline-none transition-colors" value={floor} onChange={e => setFloor(e.target.value)} />
+                            </div>
+                            <div className="flex items-center gap-2 pt-2">
+                                <input type="checkbox" id="tpl" className="fire-checkbox" checked={useTemplate} onChange={e => setUseTemplate(e.target.checked)} />
+                                <label htmlFor="tpl" className="text-sm text-zinc-400">Usar plantilla de Soporte</label>
+                            </div>
+                            <div className="flex gap-3 mt-6">
+                                <button type="button" onClick={onClose} className="flex-1 bg-zinc-800 text-white py-2 rounded-lg hover:bg-zinc-700 transition-colors">Cancelar</button>
+                                <button type="submit" className="flex-1 bg-gradient-fire text-white py-2 rounded-lg font-bold transition-transform active:scale-95">Crear</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             );
@@ -423,19 +454,16 @@
                 "Antivirus", "WAVE", "Conectividad Red / IP", "Software operativos", "Funcionamiento del Disco"
             ];
 
-            const handleCreateList = (e) => {
-                e.preventDefault();
-                if (!newTitle || !newOwner) return;
-
+            const handleCreateList = ({ title, owner, floor, useTemplate }) => {
                 const initialItems = useTemplate 
                     ? TEMPLATE_ITEMS.map(text => ({ id: generateId(), text, done: false }))
                     : [];
 
                 const newList = {
                     id: generateId(),
-                    title: newTitle,
-                    owner: newOwner,
-                    floor: newFloor,
+                    title,
+                    owner,
+                    floor,
                     createdBy: user.name,
                     status: 'active', // Estado inicial
                     equipmentId: '',
@@ -467,13 +495,12 @@
 
             const handleFinishList = (shouldArchive) => {
                 if (shouldArchive && activeListId) {
-                    // Cambiar estado a 'completed'
                     const newLists = lists.map(l => l.id === activeListId ? { ...l, status: 'completed' } : l);
                     saveData(newLists);
                     setActiveListId(null);
-                    setCurrentView('stats'); // Redirigir a estadísticas
+                    setCurrentView('stats'); 
                 } else {
-                    setActiveListId(null); // Solo cerrar
+                    setActiveListId(null); 
                 }
             };
 
@@ -499,7 +526,6 @@
                 }
             }
 
-            // Filtrar listas ACTIVAS para la vista principal
             const activeLists = lists.filter(l => l.status !== 'completed' && (user.isAdmin || l.createdBy === user.name));
 
             return (
@@ -509,17 +535,20 @@
                         <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 animate-fade-in">
                             <div className="bg-zinc-900 border border-zinc-800 w-full max-w-sm p-6 rounded-2xl shadow-2xl">
                                 <h3 className="text-xl font-bold text-white mb-4">Nueva Inspección</h3>
-                                <form onSubmit={handleCreateList} className="space-y-4">
-                                    <input autoFocus required className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-fire-500 outline-none" placeholder="Título (Ej: Mantenimiento PC-01)" value={newTitle} onChange={e => setNewTitle(e.target.value)} />
-                                    <input required className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-fire-500 outline-none" placeholder="Usuario" value={newOwner} onChange={e => setNewOwner(e.target.value)} />
-                                    <input className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-fire-500 outline-none" placeholder="Ubicación (Opcional)" value={newFloor} onChange={e => setNewFloor(e.target.value)} />
+                                <form onSubmit={(e) => {
+                                    e.preventDefault();
+                                    if(newTitle && newOwner) handleCreateList({ title: newTitle, owner: newOwner, floor: newFloor, useTemplate });
+                                }} className="space-y-4">
+                                    <input autoFocus required className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-fire-500 outline-none transition-colors" placeholder="Título (Ej: Mantenimiento PC-01)" value={newTitle} onChange={e => setNewTitle(e.target.value)} />
+                                    <input required className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-fire-500 outline-none transition-colors" placeholder="Usuario" value={newOwner} onChange={e => setNewOwner(e.target.value)} />
+                                    <input className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-fire-500 outline-none transition-colors" placeholder="Ubicación (Opcional)" value={newFloor} onChange={e => setNewFloor(e.target.value)} />
                                     <div className="flex items-center gap-2 pt-2">
                                         <input type="checkbox" id="tpl" className="fire-checkbox" checked={useTemplate} onChange={e => setUseTemplate(e.target.checked)} />
                                         <label htmlFor="tpl" className="text-sm text-zinc-400">Usar plantilla de Soporte</label>
                                     </div>
                                     <div className="flex gap-3 mt-4">
-                                        <button type="button" onClick={() => setIsCreating(false)} className="flex-1 bg-zinc-800 py-3 rounded-xl">Cancelar</button>
-                                        <button type="submit" className="flex-1 bg-gradient-fire text-white font-bold py-3 rounded-xl">Crear</button>
+                                        <button type="button" onClick={() => setIsCreating(false)} className="flex-1 bg-zinc-800 py-3 rounded-xl transition-colors">Cancelar</button>
+                                        <button type="submit" className="flex-1 bg-gradient-fire text-white font-bold py-3 rounded-xl transition-transform active:scale-95">Crear</button>
                                     </div>
                                 </form>
                             </div>
@@ -562,7 +591,12 @@
                         {/* Content */}
                         <div className="flex-1 overflow-y-auto p-4 md:p-8">
                             {currentView === 'stats' ? (
-                                <StatsView lists={lists} onOpenList={openListFromStats} />
+                                <StatsView 
+                                    lists={lists} 
+                                    onOpenList={openListFromStats} 
+                                    onDeleteList={handleDeleteList}
+                                    currentUser={user}
+                                />
                             ) : (
                                 <div className="space-y-4 pb-24">
                                     {activeLists.length === 0 && (
