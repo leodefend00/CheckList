@@ -63,8 +63,8 @@
             background: linear-gradient(135deg, #fb923c 0%, #ef4444 100%);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
-
-        /* Gráfico Circular Simple CSS */
+        
+         /* Gráfico Circular Simple CSS */
         .pie-chart {
             width: 120px; height: 120px; border-radius: 50%;
             background: conic-gradient(var(--color) var(--percent), #333 0);
@@ -122,7 +122,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        const CHECKLIST_ROOM_ID = "checkmate-global-v5";
+        const CHECKLIST_ROOM_ID = "checkmate-global-v6"; 
 
         const FIREBASE_CONFIG = {
             apiKey: "AIzaSyAUiRqoUjkVQdfpN2IVGUAHjd8SIWi8J6Q",
@@ -171,7 +171,10 @@
             const handleSubmit = (e) => {
                 e.preventDefault();
                 if (name) {
-                    const isAdmin = name.trim().toLowerCase() === 'leonardo';
+                    const lowerName = name.trim().toLowerCase();
+                    const supervisors = ['carlos', 'jorge', 'carlos urbina', 'jorge garcia'];
+                    const isAdmin = supervisors.includes(lowerName);
+                    
                     onLogin({ name: name.trim(), isAdmin });
                 }
             };
@@ -194,7 +197,7 @@
                                     <input 
                                         type="text" required autoFocus
                                         className="w-full bg-black border border-zinc-700 rounded-lg py-3 pl-10 pr-3 text-white focus:border-fire-500 outline-none transition-colors"
-                                        placeholder="Ej: Leonardo, Maria..."
+                                        placeholder="Ej: Juan Pérez..."
                                         value={name} onChange={e => setName(e.target.value)}
                                     />
                                 </div>
@@ -210,34 +213,30 @@
 
         // --- VISTA DE ESTADÍSTICAS ---
         const StatsView = ({ lists }) => {
-            // Calcular estadísticas
             const totalLists = lists.length;
             const totalItems = lists.reduce((acc, l) => acc + l.items.length, 0);
             const doneItems = lists.reduce((acc, l) => acc + l.items.filter(i => i.done).length, 0);
             const globalPercent = totalItems > 0 ? Math.round((doneItems / totalItems) * 100) : 0;
             
-            // Stats por usuario (creador)
             const userStats = {};
             lists.forEach(l => {
-                if (!userStats[l.createdBy]) userStats[l.createdBy] = { total: 0, done: 0, count: 0 };
-                userStats[l.createdBy].count++;
-                userStats[l.createdBy].total += l.items.length;
-                userStats[l.createdBy].done += l.items.filter(i => i.done).length;
+                const creator = l.createdBy || 'Desconocido';
+                if (!userStats[creator]) userStats[creator] = { total: 0, done: 0, count: 0 };
+                userStats[creator].count++;
+                userStats[creator].total += l.items.length;
+                userStats[creator].done += l.items.filter(i => i.done).length;
             });
             const sortedUsers = Object.entries(userStats).sort((a, b) => b[1].count - a[1].count);
 
-            // Determinar color del gráfico circular
             const pieColor = globalPercent < 50 ? '#ef4444' : globalPercent < 80 ? '#f97316' : '#22c55e';
 
             return (
                 <div className="p-8 space-y-8 animate-fade-in pb-20">
                     <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-                        <Icons.Chart /> Panel de Estadísticas Globales
+                        <Icons.Chart /> Panel de Supervisión
                     </h2>
 
-                    {/* KPIs Principales */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {/* Gráfico Circular de Cumplimiento */}
                         <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl flex items-center justify-between shadow-lg">
                             <div>
                                 <p className="text-zinc-500 text-xs font-bold uppercase mb-1">Cumplimiento Global</p>
@@ -249,20 +248,18 @@
                             </div>
                         </div>
 
-                        {/* Total Listas */}
                         <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl flex flex-col justify-center shadow-lg">
-                            <p className="text-zinc-500 text-xs font-bold uppercase mb-2">Listas Activas</p>
+                            <p className="text-zinc-500 text-xs font-bold uppercase mb-2">Listas Totales</p>
                             <h3 className="text-5xl font-bold text-white">{totalLists}</h3>
-                            <p className="text-fire-500 text-xs mt-2 font-medium">En proceso de verificación</p>
+                            <p className="text-fire-500 text-xs mt-2 font-medium">Bajo supervisión</p>
                         </div>
 
-                        {/* Top Técnico */}
                         <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl flex flex-col justify-center shadow-lg">
                             <p className="text-zinc-500 text-xs font-bold uppercase mb-2">Técnico Más Activo</p>
                             {sortedUsers.length > 0 ? (
                                 <div>
                                     <h3 className="text-2xl font-bold text-white truncate">{sortedUsers[0][0]}</h3>
-                                    <p className="text-zinc-400 text-xs mt-1">{sortedUsers[0][1].count} listas creadas</p>
+                                    <p className="text-zinc-400 text-xs mt-1">{sortedUsers[0][1].count} listas</p>
                                 </div>
                             ) : (
                                 <p className="text-zinc-600 italic">Sin datos</p>
@@ -270,41 +267,15 @@
                         </div>
                     </div>
 
-                    {/* Gráfico de Barras por Lista */}
                     <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl shadow-lg">
-                        <h3 className="text-white font-bold mb-4 text-sm uppercase tracking-wide">Progreso por Lista</h3>
-                        <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
-                            {lists.map(list => {
-                                const lTotal = list.items.length;
-                                const lDone = list.items.filter(i => i.done).length;
-                                const lPercent = lTotal > 0 ? Math.round((lDone / lTotal) * 100) : 0;
-                                return (
-                                    <div key={list.id}>
-                                        <div className="flex justify-between text-xs mb-1">
-                                            <span className="text-zinc-300 truncate w-2/3">{list.title} <span className="text-zinc-500">({list.owner})</span></span>
-                                            <span className="text-white font-mono">{lPercent}%</span>
-                                        </div>
-                                        <div className="w-full bg-zinc-800 h-2 rounded-full overflow-hidden">
-                                            <div className="bg-gradient-fire h-full" style={{width: `${lPercent}%`}}></div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                            {lists.length === 0 && <p className="text-zinc-600 text-center text-sm py-4">No hay listas para mostrar.</p>}
-                        </div>
-                    </div>
-
-                    {/* Tabla de Rendimiento */}
-                    <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl shadow-lg">
-                        <h3 className="text-white font-bold mb-4 text-sm uppercase tracking-wide">Rendimiento por Técnico</h3>
+                        <h3 className="text-white font-bold mb-4 text-sm uppercase tracking-wide">Desempeño por Técnico</h3>
                         <div className="overflow-x-auto">
                             <table className="w-full text-left text-sm text-zinc-400">
                                 <thead className="text-xs text-zinc-500 uppercase bg-zinc-950/50 border-b border-zinc-800">
                                     <tr>
-                                        <th className="px-4 py-3">Nombre</th>
+                                        <th className="px-4 py-3">Técnico</th>
                                         <th className="px-4 py-3 text-center">Listas</th>
-                                        <th className="px-4 py-3 text-center">Ítems Totales</th>
-                                        <th className="px-4 py-3 text-center">Completados</th>
+                                        <th className="px-4 py-3 text-center">Avance</th>
                                         <th className="px-4 py-3 text-right">Efectividad</th>
                                     </tr>
                                 </thead>
@@ -315,8 +286,7 @@
                                             <tr key={name} className="hover:bg-zinc-800/30">
                                                 <td className="px-4 py-3 font-medium text-white">{name}</td>
                                                 <td className="px-4 py-3 text-center">{stats.count}</td>
-                                                <td className="px-4 py-3 text-center">{stats.total}</td>
-                                                <td className="px-4 py-3 text-center text-emerald-500">{stats.done}</td>
+                                                <td className="px-4 py-3 text-center text-emerald-500">{stats.done}/{stats.total}</td>
                                                 <td className="px-4 py-3 text-right font-mono text-fire-500">{efficiency}%</td>
                                             </tr>
                                         );
@@ -381,14 +351,14 @@
         // --- APP PRINCIPAL ---
         function App() {
             const [user, setUser] = useState(() => {
-                const saved = localStorage.getItem('checkmate_user_v5');
+                const saved = localStorage.getItem('checkmate_user_v7');
                 return saved ? JSON.parse(saved) : null;
             });
             const [lists, setLists] = useState([]);
             const [isCloudActive, setIsCloudActive] = useState(false);
             const [sidebarOpen, setSidebarOpen] = useState(false);
             const [isModalOpen, setIsModalOpen] = useState(false); 
-            const [currentView, setCurrentView] = useState('lists'); // 'lists' | 'stats'
+            const [currentView, setCurrentView] = useState('lists'); 
             
             const [editingListId, setEditingListId] = useState(null);
             const [editingItemId, setEditingItemId] = useState(null);
@@ -397,14 +367,15 @@
 
             const handleLogin = (userData) => {
                 setUser(userData);
-                localStorage.setItem('checkmate_user_v5', JSON.stringify(userData));
+                localStorage.setItem('checkmate_user_v7', JSON.stringify(userData));
             };
 
             const handleLogout = () => {
                 setUser(null);
-                localStorage.removeItem('checkmate_user_v5');
+                localStorage.removeItem('checkmate_user_v7');
             };
 
+            // Sync Logic
             useEffect(() => {
                 let unsub = () => {};
                 let authUnsub = () => {};
@@ -462,13 +433,14 @@
             const updateEquipmentId = (listId, val) => { const newLists = lists.map(l => l.id === listId ? { ...l, equipmentId: val } : l); saveData(newLists); };
             const updateObservations = (listId, val) => { const newLists = lists.map(l => l.id === listId ? { ...l, observations: val } : l); saveData(newLists); };
 
+            // Renderizado condicional
             if (!user) return <LoginScreen onLogin={handleLogin} />;
 
-            // Filtrado para la vista de listas (Stats siempre ve todo)
-            const filteredLists = lists.filter(l => {
-                if (user.isAdmin) return true; 
+            // Filtro seguro
+            const filteredLists = user ? lists.filter(l => {
+                if (user.isAdmin) return true;
                 return l.createdBy === user.name || l.isDefault;
-            });
+            }) : [];
 
             return (
                 <div className="flex h-full bg-black text-zinc-200 overflow-hidden font-sans selection:bg-fire-500 selection:text-white">
@@ -488,7 +460,7 @@
                             <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3">
                                 <div className="flex justify-between items-start">
                                     <div>
-                                        <p className="text-xs text-zinc-500 uppercase font-bold mb-1">{user.isAdmin ? '👑 ADMIN' : 'Técnico'}</p>
+                                        <p className="text-xs text-zinc-500 uppercase font-bold mb-1">{user.isAdmin ? '👮‍♂️ SUPERVISOR' : 'Técnico'}</p>
                                         <p className="text-white font-medium truncate">{user.name}</p>
                                     </div>
                                 </div>
@@ -499,11 +471,13 @@
                             <div className="space-y-1 mb-4">
                                 <p className="px-2 text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">Navegación</p>
                                 <button onClick={() => { setCurrentView('lists'); setSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${currentView === 'lists' ? 'bg-zinc-900 text-fire-500 border border-zinc-800' : 'text-zinc-400 hover:text-white hover:bg-zinc-900'}`}>
-                                    <Icons.List /> Mis Listas
+                                    <Icons.List /> {user.isAdmin ? 'Todas las Listas' : 'Mis Listas'}
                                 </button>
-                                <button onClick={() => { setCurrentView('stats'); setSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${currentView === 'stats' ? 'bg-zinc-900 text-fire-500 border border-zinc-800' : 'text-zinc-400 hover:text-white hover:bg-zinc-900'}`}>
-                                    <Icons.Chart /> Estadísticas Globales
-                                </button>
+                                {user.isAdmin && (
+                                    <button onClick={() => { setCurrentView('stats'); setSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${currentView === 'stats' ? 'bg-zinc-900 text-fire-500 border border-zinc-800' : 'text-zinc-400 hover:text-white hover:bg-zinc-900'}`}>
+                                        <Icons.Chart /> Estadísticas Globales
+                                    </button>
+                                )}
                             </div>
                             
                             <button onClick={() => { setIsModalOpen(true); setSidebarOpen(false); }} className="mt-auto w-full bg-gradient-fire text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-fire-900/20 hover:shadow-fire-500/40 hover:scale-[1.02] transition-all active:scale-95 flex items-center justify-center gap-2">
@@ -515,7 +489,6 @@
                         </div>
                     </aside>
                     
-                    {/* Overlay */}
                     {sidebarOpen && <div className="fixed inset-0 bg-black/80 z-20 md:hidden backdrop-blur-sm" onClick={() => setSidebarOpen(false)}></div>}
 
                     {/* Main Content */}
@@ -531,7 +504,7 @@
                         </header>
 
                         <div className="flex-1 overflow-y-auto p-4 md:p-8">
-                            {currentView === 'stats' ? (
+                            {currentView === 'stats' && user.isAdmin ? (
                                 <StatsView lists={lists} />
                             ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20">
@@ -540,6 +513,7 @@
                                         const checked = list.items.filter(i => i.done).length;
                                         const percent = total === 0 ? 0 : Math.round((checked / total) * 100);
                                         const canEdit = user.isAdmin || list.createdBy === user.name;
+                                        const showOwner = user.isAdmin && list.createdBy !== user.name;
 
                                         return (
                                             <div key={list.id} className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden flex flex-col card shadow-xl shadow-black/50 group hover:border-zinc-700 transition-colors">
@@ -552,14 +526,21 @@
                                                                 <h3 className={`text-lg font-bold text-white truncate pr-2 ${canEdit ? 'cursor-pointer hover:text-fire-400' : ''}`} onClick={() => canEdit && startEditList(list)}>{list.title}</h3>
                                                             )}
                                                             <div className="flex flex-wrap gap-1 mt-1">
-                                                                <span className="text-[10px] bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded border border-zinc-700 user-tag flex items-center gap-1"><Icons.User /> {list.owner}</span>
+                                                                <span className="text-[10px] bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded border border-zinc-700 user-tag flex items-center gap-1" title="Cliente"><Icons.User /> {list.owner}</span>
                                                                 {list.floor && <span className="text-[10px] bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded border border-zinc-700 user-tag flex items-center gap-1"><Icons.Building /> {list.floor}</span>}
                                                             </div>
+                                                            {/* Mostrar quién creó la lista si es el supervisor viéndola */}
+                                                            {showOwner && (
+                                                                <div className="mt-1 flex items-center gap-1 text-[9px] text-fire-500 font-mono border border-fire-900/30 bg-fire-900/10 px-1.5 py-0.5 rounded w-fit">
+                                                                    <Icons.Eye className="w-3 h-3"/> Creado por: {list.createdBy}
+                                                                </div>
+                                                            )}
                                                             <div className="mt-2 flex items-center gap-2">
                                                                 <Icons.Desktop />
                                                                 <input type="text" className="bg-transparent border-b border-zinc-700 text-xs text-white w-full focus:border-fire-500 outline-none placeholder-zinc-600" placeholder="ID Equipo" value={list.equipmentId || ''} onChange={(e) => updateEquipmentId(list.id, e.target.value)} disabled={!canEdit} />
                                                             </div>
                                                         </div>
+                                                        
                                                         {canEdit && (
                                                             <div className="flex gap-2 absolute right-3 top-4">
                                                                 <button onClick={() => startEditList(list)} className="text-zinc-600 hover:text-fire-500 no-print"><Icons.Edit /></button>
@@ -567,6 +548,7 @@
                                                             </div>
                                                         )}
                                                     </div>
+                                                    
                                                     <div className="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden progress-bg mt-3">
                                                         <div className="bg-gradient-fire h-full transition-all duration-500 progress-fill" style={{width: `${percent}%`}}></div>
                                                     </div>
@@ -590,10 +572,18 @@
                                                         ))}
                                                     </ul>
                                                 </div>
+
                                                 <div className="px-4 pb-4 obs-section">
                                                     <p className="text-[10px] text-zinc-500 uppercase font-bold mb-1">Observaciones</p>
-                                                    <textarea className="w-full bg-zinc-900/50 border border-zinc-800 rounded p-2 text-xs text-zinc-300 focus:border-fire-500 outline-none resize-none h-20" placeholder="Escribe detalles técnicos aquí..." value={list.observations || ''} onChange={(e) => updateObservations(list.id, e.target.value)} disabled={!canEdit}></textarea>
+                                                    <textarea 
+                                                        className="w-full bg-zinc-900/50 border border-zinc-800 rounded p-2 text-xs text-zinc-300 focus:border-fire-500 outline-none resize-none h-20"
+                                                        placeholder="Escribe detalles técnicos aquí..."
+                                                        value={list.observations || ''}
+                                                        onChange={(e) => updateObservations(list.id, e.target.value)}
+                                                        disabled={!canEdit}
+                                                    ></textarea>
                                                 </div>
+
                                                 {canEdit && (
                                                     <div className="p-3 bg-zinc-900 border-t border-zinc-800 add-form">
                                                         <input type="text" className="w-full bg-black border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-fire-600 transition-colors" placeholder="+ Agregar ítem..." value={newItemTexts[list.id] || ''} onChange={(e) => setNewItemTexts({...newItemTexts, [list.id]: e.target.value})} onKeyPress={(e) => e.key === 'Enter' && addItem(list.id, newItemTexts[list.id])} />
