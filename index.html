@@ -59,6 +59,23 @@
         .fire-checkbox:checked::before { transform: scale(1); }
 
         .bg-gradient-fire { background: linear-gradient(135deg, #f97316 0%, #dc2626 100%); }
+        .text-gradient-fire {
+            background: linear-gradient(135deg, #fb923c 0%, #ef4444 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        /* Gráfico Circular Simple CSS */
+        .pie-chart {
+            width: 120px; height: 120px; border-radius: 50%;
+            background: conic-gradient(var(--color) var(--percent), #333 0);
+            display: flex; align-items: center; justify-content: center;
+            position: relative;
+        }
+        .pie-chart::after {
+            content: ""; position: absolute; width: 80%; height: 80%;
+            background: #18181b; border-radius: 50%;
+        }
+        .pie-content { position: absolute; z-index: 10; text-align: center; }
 
         /* Login Animation */
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -66,17 +83,36 @@
 
         @media print {
             @page { size: portrait; margin: 1cm; }
-            body { background-color: white !important; color: black !important; }
+            body { background-color: white !important; color: black !important; font-size: 10pt; }
             .no-print, aside, button, .add-form, .fab-btn, .mobile-header, .login-screen, .new-list-modal { display: none !important; }
             main { margin: 0 !important; width: 100% !important; padding: 0 !important; }
-            .card { border: 1px solid #000 !important; break-inside: avoid; margin-bottom: 20px; box-shadow: none !important; background: white !important; }
+            .card { 
+                border: 1px solid #000 !important; 
+                break-inside: avoid; 
+                margin-bottom: 20px; 
+                box-shadow: none !important; 
+                background: white !important; 
+            }
             .card-header { border-bottom: 1px solid #000 !important; background: #eee !important; color: black !important; }
             .checkbox-label { color: black !important; }
             .fire-checkbox { border-color: #000 !important; }
             .fire-checkbox:checked { background-color: #000 !important; }
             .progress-bg { background-color: #ddd !important; }
             .progress-fill { background-color: #000 !important; }
-            .user-tag { border: 1px solid #000 !important; color: #000 !important; }
+            .user-tag { border: 1px solid #000 !important; color: #000 !important; background: #fff !important; }
+            
+            /* Inputs en impresión */
+            input, textarea {
+                background: transparent !important;
+                border: none !important;
+                color: black !important;
+                resize: none;
+            }
+            .obs-section {
+                border-top: 1px solid #000 !important;
+                margin-top: 10px;
+                padding-top: 5px;
+            }
         }
     </style>
 </head>
@@ -86,7 +122,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        const CHECKLIST_ROOM_ID = "checkmate-global-v4";
+        const CHECKLIST_ROOM_ID = "checkmate-global-v5";
 
         const FIREBASE_CONFIG = {
             apiKey: "AIzaSyAUiRqoUjkVQdfpN2IVGUAHjd8SIWi8J6Q",
@@ -120,12 +156,15 @@
             Check: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>,
             User: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>,
             Building: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>,
-            Logout: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+            Logout: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>,
+            Desktop: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>,
+            Chart: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path strokeLinecap="round" strokeLinejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>,
+            List: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
         };
 
         const generateId = () => Math.random().toString(36).substr(2, 9);
 
-        // --- PANTALLA DE LOGIN (SOLO USUARIO) ---
+        // --- PANTALLA DE LOGIN ---
         const LoginScreen = ({ onLogin }) => {
             const [name, setName] = useState('');
 
@@ -169,22 +208,141 @@
             );
         };
 
-        // --- MODAL PARA NUEVA LISTA (ASIGNACIÓN) ---
+        // --- VISTA DE ESTADÍSTICAS ---
+        const StatsView = ({ lists }) => {
+            // Calcular estadísticas
+            const totalLists = lists.length;
+            const totalItems = lists.reduce((acc, l) => acc + l.items.length, 0);
+            const doneItems = lists.reduce((acc, l) => acc + l.items.filter(i => i.done).length, 0);
+            const globalPercent = totalItems > 0 ? Math.round((doneItems / totalItems) * 100) : 0;
+            
+            // Stats por usuario (creador)
+            const userStats = {};
+            lists.forEach(l => {
+                if (!userStats[l.createdBy]) userStats[l.createdBy] = { total: 0, done: 0, count: 0 };
+                userStats[l.createdBy].count++;
+                userStats[l.createdBy].total += l.items.length;
+                userStats[l.createdBy].done += l.items.filter(i => i.done).length;
+            });
+            const sortedUsers = Object.entries(userStats).sort((a, b) => b[1].count - a[1].count);
+
+            // Determinar color del gráfico circular
+            const pieColor = globalPercent < 50 ? '#ef4444' : globalPercent < 80 ? '#f97316' : '#22c55e';
+
+            return (
+                <div className="p-8 space-y-8 animate-fade-in pb-20">
+                    <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+                        <Icons.Chart /> Panel de Estadísticas Globales
+                    </h2>
+
+                    {/* KPIs Principales */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {/* Gráfico Circular de Cumplimiento */}
+                        <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl flex items-center justify-between shadow-lg">
+                            <div>
+                                <p className="text-zinc-500 text-xs font-bold uppercase mb-1">Cumplimiento Global</p>
+                                <h3 className="text-4xl font-bold text-white">{globalPercent}%</h3>
+                                <p className="text-zinc-400 text-xs mt-2">{doneItems} de {totalItems} ítems</p>
+                            </div>
+                            <div className="pie-chart" style={{"--percent": `${globalPercent}%`, "--color": pieColor}}>
+                                <div className="pie-content text-xl font-bold">{globalPercent}%</div>
+                            </div>
+                        </div>
+
+                        {/* Total Listas */}
+                        <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl flex flex-col justify-center shadow-lg">
+                            <p className="text-zinc-500 text-xs font-bold uppercase mb-2">Listas Activas</p>
+                            <h3 className="text-5xl font-bold text-white">{totalLists}</h3>
+                            <p className="text-fire-500 text-xs mt-2 font-medium">En proceso de verificación</p>
+                        </div>
+
+                        {/* Top Técnico */}
+                        <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl flex flex-col justify-center shadow-lg">
+                            <p className="text-zinc-500 text-xs font-bold uppercase mb-2">Técnico Más Activo</p>
+                            {sortedUsers.length > 0 ? (
+                                <div>
+                                    <h3 className="text-2xl font-bold text-white truncate">{sortedUsers[0][0]}</h3>
+                                    <p className="text-zinc-400 text-xs mt-1">{sortedUsers[0][1].count} listas creadas</p>
+                                </div>
+                            ) : (
+                                <p className="text-zinc-600 italic">Sin datos</p>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Gráfico de Barras por Lista */}
+                    <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl shadow-lg">
+                        <h3 className="text-white font-bold mb-4 text-sm uppercase tracking-wide">Progreso por Lista</h3>
+                        <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
+                            {lists.map(list => {
+                                const lTotal = list.items.length;
+                                const lDone = list.items.filter(i => i.done).length;
+                                const lPercent = lTotal > 0 ? Math.round((lDone / lTotal) * 100) : 0;
+                                return (
+                                    <div key={list.id}>
+                                        <div className="flex justify-between text-xs mb-1">
+                                            <span className="text-zinc-300 truncate w-2/3">{list.title} <span className="text-zinc-500">({list.owner})</span></span>
+                                            <span className="text-white font-mono">{lPercent}%</span>
+                                        </div>
+                                        <div className="w-full bg-zinc-800 h-2 rounded-full overflow-hidden">
+                                            <div className="bg-gradient-fire h-full" style={{width: `${lPercent}%`}}></div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                            {lists.length === 0 && <p className="text-zinc-600 text-center text-sm py-4">No hay listas para mostrar.</p>}
+                        </div>
+                    </div>
+
+                    {/* Tabla de Rendimiento */}
+                    <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl shadow-lg">
+                        <h3 className="text-white font-bold mb-4 text-sm uppercase tracking-wide">Rendimiento por Técnico</h3>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left text-sm text-zinc-400">
+                                <thead className="text-xs text-zinc-500 uppercase bg-zinc-950/50 border-b border-zinc-800">
+                                    <tr>
+                                        <th className="px-4 py-3">Nombre</th>
+                                        <th className="px-4 py-3 text-center">Listas</th>
+                                        <th className="px-4 py-3 text-center">Ítems Totales</th>
+                                        <th className="px-4 py-3 text-center">Completados</th>
+                                        <th className="px-4 py-3 text-right">Efectividad</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-zinc-800">
+                                    {sortedUsers.map(([name, stats], idx) => {
+                                        const efficiency = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
+                                        return (
+                                            <tr key={name} className="hover:bg-zinc-800/30">
+                                                <td className="px-4 py-3 font-medium text-white">{name}</td>
+                                                <td className="px-4 py-3 text-center">{stats.count}</td>
+                                                <td className="px-4 py-3 text-center">{stats.total}</td>
+                                                <td className="px-4 py-3 text-center text-emerald-500">{stats.done}</td>
+                                                <td className="px-4 py-3 text-right font-mono text-fire-500">{efficiency}%</td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- MODAL PARA NUEVA LISTA ---
         const NewListModal = ({ isOpen, onClose, onCreate, currentUser }) => {
             const [title, setTitle] = useState('');
-            // Ahora el owner se inicializa vacío porque se refiere al "cliente"
             const [owner, setOwner] = useState(''); 
             const [floor, setFloor] = useState('');
+            const [useTemplate, setUseTemplate] = useState(true);
 
             if (!isOpen) return null;
 
             const handleSubmit = (e) => {
                 e.preventDefault();
                 if (title && owner) {
-                    onCreate({ title, owner, floor });
-                    setTitle(''); 
-                    setOwner('');
-                    setFloor('');
+                    onCreate({ title, owner, floor, useTemplate });
+                    setTitle(''); setOwner(''); setFloor(''); setUseTemplate(true);
                     onClose();
                 }
             };
@@ -195,16 +353,20 @@
                         <h3 className="text-xl font-bold text-white mb-4">Nueva Lista de Verificación</h3>
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div>
-                                <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">Título de la Lista</label>
-                                <input autoFocus required className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-fire-500 outline-none" placeholder="Ej: Revisión Diaria" value={title} onChange={e => setTitle(e.target.value)} />
+                                <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">Título (Ej: Soporte PC-01)</label>
+                                <input autoFocus required className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-fire-500 outline-none" value={title} onChange={e => setTitle(e.target.value)} />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">Realizado a (Nombre del Cliente)</label>
-                                <input required className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-fire-500 outline-none" placeholder="Nombre de la persona atendida" value={owner} onChange={e => setOwner(e.target.value)} />
+                                <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">Realizado a (Nombre Cliente)</label>
+                                <input required className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-fire-500 outline-none" value={owner} onChange={e => setOwner(e.target.value)} />
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">Ubicación / Piso (Opcional)</label>
-                                <input className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-fire-500 outline-none" placeholder="Ubicación" value={floor} onChange={e => setFloor(e.target.value)} />
+                                <input className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-fire-500 outline-none" value={floor} onChange={e => setFloor(e.target.value)} />
+                            </div>
+                            <div className="flex items-center gap-2 pt-2">
+                                <input type="checkbox" id="useTemplate" className="fire-checkbox" checked={useTemplate} onChange={e => setUseTemplate(e.target.checked)} />
+                                <label htmlFor="useTemplate" className="text-sm text-zinc-300 cursor-pointer">Cargar items de Soporte Técnico</label>
                             </div>
                             <div className="flex gap-3 mt-6">
                                 <button type="button" onClick={onClose} className="flex-1 bg-zinc-800 text-white py-2 rounded-lg hover:bg-zinc-700">Cancelar</button>
@@ -226,6 +388,7 @@
             const [isCloudActive, setIsCloudActive] = useState(false);
             const [sidebarOpen, setSidebarOpen] = useState(false);
             const [isModalOpen, setIsModalOpen] = useState(false); 
+            const [currentView, setCurrentView] = useState('lists'); // 'lists' | 'stats'
             
             const [editingListId, setEditingListId] = useState(null);
             const [editingItemId, setEditingItemId] = useState(null);
@@ -242,30 +405,22 @@
                 localStorage.removeItem('checkmate_user_v5');
             };
 
-            // Sync Logic
             useEffect(() => {
                 let unsub = () => {};
                 let authUnsub = () => {};
-
                 const initSync = async () => {
-                    const saved = localStorage.getItem('checkmate_data_v4');
+                    const saved = localStorage.getItem('checkmate_data_v5');
                     if (saved) setLists(JSON.parse(saved));
-
                     if (isFirebaseAvailable && db && auth) {
                         authUnsub = auth.onAuthStateChanged(async (u) => {
                             if (!u) { try { await auth.signInAnonymously(); } catch(e) { return; } }
-                            
                             unsub = db.collection('checkmate_lists').doc(CHECKLIST_ROOM_ID)
                                 .onSnapshot(doc => {
                                     if (doc.exists && doc.data().data) {
                                         setLists(doc.data().data);
                                         setIsCloudActive(true);
                                     } else if (!doc.exists) {
-                                        const initialData = [{ 
-                                            id: '1', title: '📋 Lista Global (Ejemplo)', owner: 'Sistema', floor: 'General', isDefault: true, createdBy: 'Sistema',
-                                            items: [{id: 'i1', text: 'Esta lista la ven todos', done: false}] 
-                                        }];
-                                        db.collection('checkmate_lists').doc(CHECKLIST_ROOM_ID).set({ data: initialData });
+                                        db.collection('checkmate_lists').doc(CHECKLIST_ROOM_ID).set({ data: [] });
                                     }
                                 }, err => setIsCloudActive(false));
                         });
@@ -277,22 +432,22 @@
 
             const saveData = (newLists) => {
                 setLists(newLists);
-                localStorage.setItem('checkmate_data_v4', JSON.stringify(newLists));
+                localStorage.setItem('checkmate_data_v5', JSON.stringify(newLists));
                 if (isCloudActive && db) {
                     db.collection('checkmate_lists').doc(CHECKLIST_ROOM_ID).set({ data: newLists }).catch(console.error);
                 }
             };
 
-            // CRUD
-            const handleCreateList = ({ title, owner, floor }) => {
-                saveData([...lists, { 
-                    id: generateId(), 
-                    title, 
-                    owner, // Cliente
-                    floor, // Ubicación
-                    createdBy: user.name, // Quien la creó (el técnico/usuario logueado)
-                    items: [] 
-                }]);
+            const TEMPLATE_ITEMS = [
+                "Arranque Sin Problemas", "Usuario En Dominio", "Impresora", "Office / Word", "GLPI",
+                "Antivirus", "WAVE", "Conectividad Red / IP", "Software operativos", "Funcionamiento del Disco"
+            ];
+
+            const handleCreateList = ({ title, owner, floor, useTemplate }) => {
+                const initialItems = useTemplate 
+                    ? TEMPLATE_ITEMS.map(text => ({ id: generateId(), text, done: false }))
+                    : [];
+                saveData([...lists, { id: generateId(), title, owner, floor, createdBy: user.name, equipmentId: '', observations: '', items: initialItems }]);
                 setSidebarOpen(false);
             };
 
@@ -304,13 +459,15 @@
             const saveEditList = (id) => { if (editValue.trim()) saveData(lists.map(l => l.id === id ? { ...l, title: editValue } : l)); setEditingListId(null); };
             const startEditItem = (item) => { setEditingItemId(item.id); setEditValue(item.text); };
             const saveEditItem = (listId, itemId) => { if (editValue.trim()) saveData(lists.map(l => l.id === listId ? { ...l, items: l.items.map(i => i.id === itemId ? { ...i, text: editValue } : i) } : l)); setEditingItemId(null); };
+            const updateEquipmentId = (listId, val) => { const newLists = lists.map(l => l.id === listId ? { ...l, equipmentId: val } : l); saveData(newLists); };
+            const updateObservations = (listId, val) => { const newLists = lists.map(l => l.id === listId ? { ...l, observations: val } : l); saveData(newLists); };
 
             if (!user) return <LoginScreen onLogin={handleLogin} />;
 
-            // FILTRADO DE LISTAS
+            // Filtrado para la vista de listas (Stats siempre ve todo)
             const filteredLists = lists.filter(l => {
-                if (user.isAdmin) return true; // Leonardo ve TODO
-                return l.createdBy === user.name || l.isDefault; // Ves las que TÚ creaste + default
+                if (user.isAdmin) return true; 
+                return l.createdBy === user.name || l.isDefault;
             });
 
             return (
@@ -331,7 +488,7 @@
                             <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3">
                                 <div className="flex justify-between items-start">
                                     <div>
-                                        <p className="text-xs text-zinc-500 uppercase font-bold mb-1">{user.isAdmin ? '👑 ADMIN' : 'Técnico / Usuario'}</p>
+                                        <p className="text-xs text-zinc-500 uppercase font-bold mb-1">{user.isAdmin ? '👑 ADMIN' : 'Técnico'}</p>
                                         <p className="text-white font-medium truncate">{user.name}</p>
                                     </div>
                                 </div>
@@ -339,23 +496,17 @@
                         </div>
 
                         <div className="p-4 flex flex-col h-[calc(100%-160px)]">
-                            <div className="flex-1 overflow-y-auto space-y-2">
-                                <div className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-3 pl-2">
-                                    {user.isAdmin ? 'Todas las Listas' : 'Mis Listas Creadas'}
-                                </div>
-                                {filteredLists.map(l => (
-                                    <div key={l.id} className="flex flex-col px-3 py-3 rounded-xl bg-zinc-900/50 border border-zinc-900 hover:border-fire-600/50 hover:bg-zinc-900 transition-all cursor-pointer group">
-                                        <div className="flex justify-between items-center mb-1">
-                                            <span className="truncate text-sm font-medium">{l.title}</span>
-                                            <span className="text-xs text-zinc-500 font-mono">{l.items.filter(i=>i.done).length}/{l.items.length}</span>
-                                        </div>
-                                        <div className="flex gap-2 text-[10px] text-zinc-500 truncate">
-                                            <span className="flex items-center gap-1"><Icons.User /> {l.owner}</span>
-                                        </div>
-                                    </div>
-                                ))}
+                            <div className="space-y-1 mb-4">
+                                <p className="px-2 text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">Navegación</p>
+                                <button onClick={() => { setCurrentView('lists'); setSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${currentView === 'lists' ? 'bg-zinc-900 text-fire-500 border border-zinc-800' : 'text-zinc-400 hover:text-white hover:bg-zinc-900'}`}>
+                                    <Icons.List /> Mis Listas
+                                </button>
+                                <button onClick={() => { setCurrentView('stats'); setSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${currentView === 'stats' ? 'bg-zinc-900 text-fire-500 border border-zinc-800' : 'text-zinc-400 hover:text-white hover:bg-zinc-900'}`}>
+                                    <Icons.Chart /> Estadísticas Globales
+                                </button>
                             </div>
-                            <button onClick={() => { setIsModalOpen(true); setSidebarOpen(false); }} className="mt-4 w-full bg-gradient-fire text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-fire-900/20 hover:shadow-fire-500/40 hover:scale-[1.02] transition-all active:scale-95 flex items-center justify-center gap-2">
+                            
+                            <button onClick={() => { setIsModalOpen(true); setSidebarOpen(false); }} className="mt-auto w-full bg-gradient-fire text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-fire-900/20 hover:shadow-fire-500/40 hover:scale-[1.02] transition-all active:scale-95 flex items-center justify-center gap-2">
                                 <Icons.Plus /> Nueva Lista
                             </button>
                             <button onClick={handleLogout} className="mt-2 w-full text-zinc-500 hover:text-white py-2 text-xs flex items-center justify-center gap-2">
@@ -364,6 +515,7 @@
                         </div>
                     </aside>
                     
+                    {/* Overlay */}
                     {sidebarOpen && <div className="fixed inset-0 bg-black/80 z-20 md:hidden backdrop-blur-sm" onClick={() => setSidebarOpen(false)}></div>}
 
                     {/* Main Content */}
@@ -379,71 +531,79 @@
                         </header>
 
                         <div className="flex-1 overflow-y-auto p-4 md:p-8">
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20">
-                                {filteredLists.map(list => {
-                                    const total = list.items.length;
-                                    const checked = list.items.filter(i => i.done).length;
-                                    const percent = total === 0 ? 0 : Math.round((checked / total) * 100);
-                                    // Solo permitir editar/borrar si eres el creador (createdBy) o admin
-                                    const canEdit = user.isAdmin || list.createdBy === user.name;
+                            {currentView === 'stats' ? (
+                                <StatsView lists={lists} />
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20">
+                                    {filteredLists.map(list => {
+                                        const total = list.items.length;
+                                        const checked = list.items.filter(i => i.done).length;
+                                        const percent = total === 0 ? 0 : Math.round((checked / total) * 100);
+                                        const canEdit = user.isAdmin || list.createdBy === user.name;
 
-                                    return (
-                                        <div key={list.id} className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden flex flex-col card shadow-xl shadow-black/50 group hover:border-zinc-700 transition-colors">
-                                            <div className="p-4 bg-zinc-900 card-header relative">
-                                                <div className="flex justify-between items-start mb-1">
-                                                    <div className="pr-6 w-full">
-                                                        {editingListId === list.id && canEdit ? (
-                                                            <input autoFocus className="bg-black text-white text-lg font-bold border-b border-fire-500 w-full outline-none" value={editValue} onChange={(e) => setEditValue(e.target.value)} onBlur={() => saveEditList(list.id)} onKeyDown={(e) => e.key === 'Enter' && saveEditList(list.id)} />
-                                                        ) : (
-                                                            <h3 className={`text-lg font-bold text-white truncate pr-2 ${canEdit ? 'cursor-pointer hover:text-fire-400' : ''}`} onClick={() => canEdit && startEditList(list)}>{list.title}</h3>
-                                                        )}
-                                                        <div className="flex flex-wrap gap-1 mt-1">
-                                                            <span className="text-[10px] bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded border border-zinc-700 user-tag flex items-center gap-1"><Icons.User /> {list.owner}</span>
-                                                            {list.floor && <span className="text-[10px] bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded border border-zinc-700 user-tag flex items-center gap-1"><Icons.Building /> {list.floor}</span>}
-                                                        </div>
-                                                    </div>
-                                                    
-                                                    {canEdit && (
-                                                        <div className="flex gap-2 absolute right-3 top-4">
-                                                            <button onClick={() => startEditList(list)} className="text-zinc-600 hover:text-fire-500 no-print"><Icons.Edit /></button>
-                                                            <button onClick={() => deleteList(list.id)} className="text-zinc-600 hover:text-red-500 no-print"><Icons.Trash /></button>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                
-                                                <div className="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden progress-bg mt-3">
-                                                    <div className="bg-gradient-fire h-full transition-all duration-500 progress-fill" style={{width: `${percent}%`}}></div>
-                                                </div>
-                                                <div className="text-[10px] text-zinc-500 mt-1 text-right font-mono">{percent}% Completado</div>
-                                            </div>
-
-                                            <div className="flex-1 p-4 max-h-[350px] overflow-y-auto">
-                                                <ul className="space-y-3">
-                                                    {list.items.map(item => (
-                                                        <li key={item.id} className="flex items-start gap-3 group/item">
-                                                            <input type="checkbox" className="fire-checkbox flex-shrink-0 mt-0.5" checked={item.done} onChange={() => toggleItem(list.id, item.id)} disabled={!canEdit} />
-                                                            {editingItemId === item.id && canEdit ? (
-                                                                <input autoFocus className="bg-transparent border-b border-fire-500 text-sm text-white w-full outline-none" value={editValue} onChange={(e) => setEditValue(e.target.value)} onBlur={() => saveEditItem(list.id, item.id)} onKeyDown={(e) => e.key === 'Enter' && saveEditItem(list.id, item.id)} />
+                                        return (
+                                            <div key={list.id} className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden flex flex-col card shadow-xl shadow-black/50 group hover:border-zinc-700 transition-colors">
+                                                <div className="p-4 bg-zinc-900 card-header relative">
+                                                    <div className="flex justify-between items-start mb-1">
+                                                        <div className="pr-6 w-full">
+                                                            {editingListId === list.id && canEdit ? (
+                                                                <input autoFocus className="bg-black text-white text-lg font-bold border-b border-fire-500 w-full outline-none" value={editValue} onChange={(e) => setEditValue(e.target.value)} onBlur={() => saveEditList(list.id)} onKeyDown={(e) => e.key === 'Enter' && saveEditList(list.id)} />
                                                             ) : (
-                                                                <span className={`text-sm flex-1 break-words transition-colors ${canEdit ? 'cursor-pointer hover:text-white' : ''} ${item.done ? 'text-zinc-500 line-through decoration-zinc-600' : 'text-zinc-300'}`} onClick={() => canEdit && startEditItem(item)}>{item.text}</span>
+                                                                <h3 className={`text-lg font-bold text-white truncate pr-2 ${canEdit ? 'cursor-pointer hover:text-fire-400' : ''}`} onClick={() => canEdit && startEditList(list)}>{list.title}</h3>
                                                             )}
-                                                            {canEdit && (
-                                                                <button onClick={() => deleteItem(list.id, item.id)} className="text-zinc-700 hover:text-red-500 opacity-0 group-hover/item:opacity-100 transition-opacity no-print"><Icons.Trash /></button>
-                                                            )}
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-
-                                            {canEdit && (
-                                                <div className="p-3 bg-zinc-900 border-t border-zinc-800 add-form">
-                                                    <input type="text" className="w-full bg-black border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-fire-600 transition-colors" placeholder="+ Agregar ítem..." value={newItemTexts[list.id] || ''} onChange={(e) => setNewItemTexts({...newItemTexts, [list.id]: e.target.value})} onKeyPress={(e) => e.key === 'Enter' && addItem(list.id, newItemTexts[list.id])} />
+                                                            <div className="flex flex-wrap gap-1 mt-1">
+                                                                <span className="text-[10px] bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded border border-zinc-700 user-tag flex items-center gap-1"><Icons.User /> {list.owner}</span>
+                                                                {list.floor && <span className="text-[10px] bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded border border-zinc-700 user-tag flex items-center gap-1"><Icons.Building /> {list.floor}</span>}
+                                                            </div>
+                                                            <div className="mt-2 flex items-center gap-2">
+                                                                <Icons.Desktop />
+                                                                <input type="text" className="bg-transparent border-b border-zinc-700 text-xs text-white w-full focus:border-fire-500 outline-none placeholder-zinc-600" placeholder="ID Equipo" value={list.equipmentId || ''} onChange={(e) => updateEquipmentId(list.id, e.target.value)} disabled={!canEdit} />
+                                                            </div>
+                                                        </div>
+                                                        {canEdit && (
+                                                            <div className="flex gap-2 absolute right-3 top-4">
+                                                                <button onClick={() => startEditList(list)} className="text-zinc-600 hover:text-fire-500 no-print"><Icons.Edit /></button>
+                                                                <button onClick={() => deleteList(list.id)} className="text-zinc-600 hover:text-red-500 no-print"><Icons.Trash /></button>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden progress-bg mt-3">
+                                                        <div className="bg-gradient-fire h-full transition-all duration-500 progress-fill" style={{width: `${percent}%`}}></div>
+                                                    </div>
+                                                    <div className="text-[10px] text-zinc-500 mt-1 text-right font-mono">{percent}% Completado</div>
                                                 </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
-                            </div>
+
+                                                <div className="flex-1 p-4 max-h-[350px] overflow-y-auto">
+                                                    <ul className="space-y-3">
+                                                        {list.items.map(item => (
+                                                            <li key={item.id} className="flex items-start gap-3 group/item">
+                                                                <input type="checkbox" className="fire-checkbox flex-shrink-0 mt-0.5" checked={item.done} onChange={() => toggleItem(list.id, item.id)} disabled={!canEdit} />
+                                                                {editingItemId === item.id && canEdit ? (
+                                                                    <input autoFocus className="bg-transparent border-b border-fire-500 text-sm text-white w-full outline-none" value={editValue} onChange={(e) => setEditValue(e.target.value)} onBlur={() => saveEditItem(list.id, item.id)} onKeyDown={(e) => e.key === 'Enter' && saveEditItem(list.id, item.id)} />
+                                                                ) : (
+                                                                    <span className={`text-sm flex-1 break-words transition-colors ${canEdit ? 'cursor-pointer hover:text-white' : ''} ${item.done ? 'text-zinc-500 line-through decoration-zinc-600' : 'text-zinc-300'}`} onClick={() => canEdit && startEditItem(item)}>{item.text}</span>
+                                                                )}
+                                                                {canEdit && (
+                                                                    <button onClick={() => deleteItem(list.id, item.id)} className="text-zinc-700 hover:text-red-500 opacity-0 group-hover/item:opacity-100 transition-opacity no-print"><Icons.Trash /></button>
+                                                                )}
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                                <div className="px-4 pb-4 obs-section">
+                                                    <p className="text-[10px] text-zinc-500 uppercase font-bold mb-1">Observaciones</p>
+                                                    <textarea className="w-full bg-zinc-900/50 border border-zinc-800 rounded p-2 text-xs text-zinc-300 focus:border-fire-500 outline-none resize-none h-20" placeholder="Escribe detalles técnicos aquí..." value={list.observations || ''} onChange={(e) => updateObservations(list.id, e.target.value)} disabled={!canEdit}></textarea>
+                                                </div>
+                                                {canEdit && (
+                                                    <div className="p-3 bg-zinc-900 border-t border-zinc-800 add-form">
+                                                        <input type="text" className="w-full bg-black border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-fire-600 transition-colors" placeholder="+ Agregar ítem..." value={newItemTexts[list.id] || ''} onChange={(e) => setNewItemTexts({...newItemTexts, [list.id]: e.target.value})} onKeyPress={(e) => e.key === 'Enter' && addItem(list.id, newItemTexts[list.id])} />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
 
                         <button onClick={() => { setIsModalOpen(true); }} className="md:hidden fixed bottom-6 right-6 w-14 h-14 bg-gradient-fire rounded-full shadow-xl shadow-fire-900/40 flex items-center justify-center text-white z-40 fab-btn active:scale-90 transition-transform"><Icons.Plus /></button>
